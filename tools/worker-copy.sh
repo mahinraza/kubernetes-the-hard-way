@@ -1,5 +1,19 @@
 for instance in node01 node02; do
 
+  if dig +short ${instance} &> /dev/null; then
+    echo "Instance ${instance} is reachable, proceeding with file copy..."
+  else
+    echo "Error: Instance ${instance} is not reachable. Please check your network and DNS settings."
+    continue
+  fi
+
+  if ping -c 1 ${instance} &> /dev/null; then
+    echo "Instance ${instance} is responding to ping, proceeding with file copy..."
+  else
+    echo "Error: Instance ${instance} is not responding to ping. Please check your network connectivity."
+    continue
+  fi
+
   echo "Copying files to ${instance}..."
   # Create temp directory
   ssh -o StrictHostKeyChecking=no ${instance} "mkdir -p ~/temp-certs"

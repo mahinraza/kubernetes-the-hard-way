@@ -1,4 +1,19 @@
 for instance in controlplane01 controlplane02; do
+
+  if dig +short ${instance} &> /dev/null; then
+    echo "Instance ${instance} is reachable, proceeding with verification..."
+  else
+    echo "Error: Instance ${instance} is not reachable. Please check your network and DNS settings."
+    continue
+  fi
+
+  if ping -c 1 ${instance} &> /dev/null; then
+    echo "Instance ${instance} is responding to ping, proceeding with verification..."
+  else
+    echo "Error: Instance ${instance} is not responding to ping. Please check your network connectivity."
+    continue
+  fi
+
   echo "=== Verifying certificates on ${instance} ==="
   ssh -o StrictHostKeyChecking=no ${instance} "
     echo 'Checking main PKI directory(/etc/kubernetes/pki/):'
