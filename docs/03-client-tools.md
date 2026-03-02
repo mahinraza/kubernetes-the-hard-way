@@ -33,9 +33,8 @@ The option `-o StrictHostKeyChecking=no` tells it not to ask if you want to conn
 `$(whoami)` selects the appropriate user name to connect to the remote VMs. On VirtualBox this evaluates to `vagrant`; on Apple Silicon it is `ubuntu`.
 
 ```bash
-for host in controlplane02 loadbalancer node01 node02; do
-    sshpass -p "vagrant" ssh-copy-id -o StrictHostKeyChecking=no $(whoami)@$host
-done
+chmod +x tools/ssh_config.sh
+bash -c tools/ssh_config.sh
 ```
 
 For each host, the output should be similar to this. If it is not, then you may have entered an incorrect password. Retry the step.
@@ -65,9 +64,8 @@ The environment variable `ARCH` is pre-set during VM deployment according to whe
 ### Linux
 
 ```bash
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/${ARCH}/kubectl"
-chmod +x kubectl
-sudo mv kubectl /usr/local/bin/
+chmod +x tools/kubectl_install.sh
+bash -c tools/kubectl_install.sh
 ```
 
 ### Verification
