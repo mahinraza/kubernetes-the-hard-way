@@ -1,53 +1,99 @@
 # Kubernetes The Hard Way
 
-|Status||
+| Status | |
 |-|-|
+| Forked & Modified by | **Mahin Raza** |
+| Original Author | [Kelsey Hightower](https://github.com/kelseyhightower/kubernetes-the-hard-way) |
+| Adapted by | [mmumshad](https://github.com/mmumshad/kubernetes-the-hard-way) |
 | Last Updated | March 2024 |
 | Last Tested | November 2025 |
 
-This tutorial walks you through setting up Kubernetes the hard way on a local machine using a hypervisor.
-This guide is not for people looking for a fully automated command to bring up a Kubernetes cluster.
-If that's you then check out [Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine), or the [Getting Started Guides](http://kubernetes.io/docs/getting-started-guides/).
+> This is my personal fork of **Kubernetes The Hard Way**, modified for my own learning journey. I use this to understand how Kubernetes works under the hood — every component, every certificate, every config file.
 
-Kubernetes The Hard Way is optimized for learning, which means taking the long route to ensure you understand each task required to bootstrap a Kubernetes cluster. Note that the cluster when built will not be accessible from your laptop browser - that isn't what this is about. If you want a more useable cluster, try [one of these](https://github.com/kodekloudhub/certified-kubernetes-administrator-course/tree/master/kubeadm-clusters).
+---
 
-This tutorial is a modified version of the original developed by [Kelsey Hightower](https://github.com/kelseyhightower/kubernetes-the-hard-way).
-While the original one uses GCP as the platform to deploy kubernetes,  we use a hypervisor to deploy a cluster on a local machine. If you prefer the cloud version, refer to the original one [here](https://github.com/kelseyhightower/kubernetes-the-hard-way)
+## What is This?
 
-The results of this tutorial should *not* be viewed as production ready, and may receive limited support from the community, but don't let that stop you from learning!<br/>Note that we are only building 2 controlplane nodes here instead of the recommended 3 that `etcd` requires to maintain quorum. This is to save on resources, and simply to show how to load balance across more than one controlplane node.
+This tutorial walks you through setting up a **fully functional Kubernetes cluster from scratch** on a local machine using VirtualBox and Vagrant — no shortcuts, no `kubeadm`, no automation.
 
-### <font color="red">Before shouting "Help! It's not working!"</font>
+This is **not** for people looking for a quick Kubernetes setup. If that's what you need, check out:
+- [Google Kubernetes Engine](https://cloud.google.com/kubernetes-engine)
+- [Getting Started Guides](http://kubernetes.io/docs/getting-started-guides/)
 
-Please note that with this particular challenge, it is all about the minute detail. If you miss _one tiny step_ anywhere along the way, it's going to break!
+The whole point is to **understand every step** — from generating TLS certificates to bootstrapping etcd, configuring the API server, and connecting worker nodes manually.
 
-Note also that in developing this lab, it has been tested *many many* times! Once you have the VMs up and you start to build the cluster, if at any point something isn't working it is 99.9999% likely to be because you missed something, not a bug in the lab!
+---
 
-Always run the `cert_verify.sh` script at the places it suggests, and always ensure you are on the correct node when you do stuff. If `cert_verify.sh` shows anything in red, then you have made an error in a previous step. For the controlplane node checks, run the check on `controlplane01` and on `controlplane02`
+## Why I'm Doing This
 
-## Target Audience
+I'm learning Kubernetes from the ground up to understand:
+- How control plane components talk to each other
+- How TLS certificates work in a cluster
+- How etcd stores cluster state
+- How kubeconfig files are structured
+- How worker nodes register with the control plane
+- How load balancing works across API servers
 
-The target audience for this tutorial is someone planning to support a production Kubernetes cluster and wants to understand how everything fits together.
+---
+
+## Important Note
+
+> This challenge is **all about the details.** Miss one tiny step and it breaks. The `cert_verify.sh` script is your best friend — run it every time it suggests and make sure everything shows green before moving on.
+
+If something isn't working — **99.9% of the time you missed a step**, not a bug in the lab. Go back and check carefully.
+
+---
 
 ## Cluster Details
 
-Kubernetes The Hard Way guides you through bootstrapping a highly available Kubernetes cluster with end-to-end encryption between components and RBAC authentication.
+This cluster uses:
 
-* [Kubernetes](https://github.com/kubernetes/kubernetes) Latest version
-* [Container Runtime](https://github.com/containerd/containerd) Latest version
-* [Weave Networking](https://www.weave.works/docs/net/latest/kubernetes/kube-addon/)
-* [etcd](https://github.com/coreos/etcd) v3.5.9
-* [CoreDNS](https://github.com/coredns/coredns) v1.9.4
+- [Kubernetes](https://github.com/kubernetes/kubernetes) — Latest version
+- [containerd](https://github.com/containerd/containerd) — Container runtime
+- [Weave Networking](https://www.weave.works/docs/net/latest/kubernetes/kube-addon/) — Pod networking
+- [etcd](https://github.com/coreos/etcd) v3.5.9 — Cluster state store
+- [CoreDNS](https://github.com/coredns/coredns) v1.9.4 — DNS for the cluster
+- [HAProxy](https://www.haproxy.org/) — Load balancer for API servers
 
-### Node configuration
+---
 
-We will be building the following:
+## Cluster Layout
 
-* Two control plane nodes (`controlplane01` and `controlplane02`) running the control plane components as operating system services. This is not a kubeadm cluster as you are used to if you have been doing the CKA course. The control planes are *not* themselves nodes, therefore will not show with `kubectl get nodes`.
-* Two worker nodes (`node01` and `node02`)
-* One loadbalancer VM running [HAProxy](https://www.haproxy.org/) to balance requests between the two API servers and provide the endpoint for your KUBECONFIG.
+```
+controlplane01  (2GB RAM, 2 CPU)  ──┐
+                                    ├──► loadbalancer (HAProxy)
+controlplane02  (2GB RAM, 1 CPU)  ──┘         ↕
+                                         kubectl / kubeconfig
+node01  (1GB RAM, 1 CPU)
+node02  (1GB RAM, 1 CPU)
+```
+
+- **2 Control Plane nodes** — run Kubernetes control plane components as OS services (not kubeadm). These are NOT kubectl nodes and won't show in `kubectl get nodes`.
+- **2 Worker nodes** — run actual workloads
+- **1 Load Balancer** — HAProxy balancing between the two API servers
+
+> Note: We use 2 controlplane nodes instead of the recommended 3 for etcd quorum. This is intentional to save resources while still demonstrating HA load balancing.
+
+---
 
 ## Getting Started
 
-* If you are using Windows or Intel Mac, start [here](./VirtualBox/docs/01-prerequisites.md) to deploy VirtualBox and Vagrant.
-* If you are using Apple Silicon Mac (M1/M2/M3), start [here](./apple-silicon/docs/01-prerequisites.md) to deploy Multipass.
+- **Windows or Intel Mac** → Start [here](./VirtualBox/docs/01-prerequisites.md) — uses VirtualBox + Vagrant
+- **Apple Silicon Mac (M1/M2/M3)** → Start [here](./apple-silicon/docs/01-prerequisites.md) — uses Multipass
 
+---
+
+## My Setup
+
+- OS: Windows
+- Hypervisor: VirtualBox + Vagrant
+- Shell: Git Bash (MINGW64)
+- GitHub: [mahinraza](https://github.com/mahinraza)
+
+---
+
+## Credits
+
+- Original tutorial by [Kelsey Hightower](https://github.com/kelseyhightower/kubernetes-the-hard-way)
+- Local VM adaptation by [mmumshad](https://github.com/mmumshad/kubernetes-the-hard-way)
+- This fork maintained by **Mahin Raza** for personal learning
