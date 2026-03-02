@@ -396,6 +396,8 @@ Copy the appropriate certificates and private keys to each instance:
 cd tools
 bash -c ./master-copy.sh
 bash -c ./master-verify.sh
+bash -c ./worker-copy.sh
+bash -c ./worker-verify.sh
 
 
 
