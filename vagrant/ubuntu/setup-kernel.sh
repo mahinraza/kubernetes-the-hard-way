@@ -3,6 +3,9 @@
 # Sets up the kernel with the requirements for running Kubernetes
 set -e
 
+swapoff -a
+sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+
 # Add br_netfilter kernel module
 cat <<EOF >> /etc/modules
 ip_vs

@@ -1,40 +1,22 @@
 # -*- mode: ruby -*-
 # vi:set ft=ruby sw=2 ts=2 sts=2:
 
-# Define how much memory your computer has in GB (e.g. 8, 16)
-# Larger nodes will be created if you have more.
-RAM_SIZE = 16
-
-# Define how mnay CPU cores you have.
-# More powerful workers will be created if you have more
-CPU_CORES = 8
-
-# Internal network prefix for the VM network
-# See the documentation before changing this
-IP_NW = "192.168.56."
-
-# Calculate resource amounts
-# based on RAM/CPU
-ram_selector = (RAM_SIZE / 4) * 4
-if ram_selector < 8
-  raise "Unsufficient memory #{RAM_SIZE}GB. min 8GB"
-end
 RESOURCES = {
   "control" => {
     1 => {
       # controlplane01 bigger since it may run e2e tests.
-      "ram" => [ram_selector * 128, 2048].max(),
-      "cpu" => CPU_CORES >= 12 ? 4 : 2,
+      "ram" => 2048,
+      "cpu" => 2,
     },
     2 => {
       # All additional masters get this
-      "ram" => [ram_selector * 128, 2048].min(),
-      "cpu" => CPU_CORES > 8 ? 2 : 1,
+      "ram" => 2048,
+      "cpu" => 1,
     },
   },
   "worker" => {
-    "ram" => [ram_selector * 128, 4096].min(),
-    "cpu" => (((CPU_CORES / 4) * 4) - 4) / 4,
+    "ram" => 1024,
+    "cpu" => 1,
   },
 }
 
@@ -65,9 +47,9 @@ NUM_CONTROL_NODES = 2
 NUM_WORKER_NODE = 2
 
 # Host address start points
-MASTER_IP_START = 10
-NODE_IP_START = 20
-LB_IP_START = 30
+MASTER_IP_START = 40
+NODE_IP_START = 50
+LB_IP_START = 60
 
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
 # configures the configuration version (we support older styles for
