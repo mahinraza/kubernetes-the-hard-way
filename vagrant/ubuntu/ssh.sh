@@ -19,9 +19,11 @@ if [ ! -d /home/vagrant/.ssh ]
 then
     mkdir /home/vagrant/.ssh
     chmod 700 /home/vagrant/.ssh
-    chown vagrant:vagrant /home/vagrant/.ssh
+    chown -R vagrant:vagrant /home/vagrant/.ssh
 fi
 
+echo "vagrant ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/vagrant
+sudo chmod 440 /etc/sudoers.d/vagrant
 
 if [ "$(hostname)" = "controlplane01" ]
 then

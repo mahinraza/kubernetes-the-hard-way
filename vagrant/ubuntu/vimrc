@@ -1,9 +1,12 @@
 set nu
 set ts=2
 set sw=2
-set et
+set sts=2
+set expandtab
 set ai
-set pastetoggle=<F3>
 set cursorline
 set cursorcolumn
-set syntax on   
+syntax on
+filetype plugin indent on
+set ruler
+set pastetoggle=<F3>

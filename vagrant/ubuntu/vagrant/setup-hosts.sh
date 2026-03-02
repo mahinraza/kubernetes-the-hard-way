@@ -7,7 +7,7 @@ THISHOST=$2
 
 # Host will have 3 interfaces: lo, DHCP assigned NAT network and static on VM network
 # We want the VM network
-PRIMARY_IP="$(ip -4 addr show | grep "inet" | egrep -v '(127\.0\.0)' | awk '{print $2}' | cut -d/ -f1)"
+PRIMARY_IP="$(ip -4 addr show | grep "inet" | egrep -v '(dynamic|127\.0\.0)' | awk '{print $2}' | cut -d/ -f1)"
 NETWORK=$(echo $PRIMARY_IP | awk 'BEGIN {FS="."} ; { printf("%s.%s.%s", $1, $2, $3) }')
 #sed -e "s/^.*${HOSTNAME}.*/${PRIMARY_IP} ${HOSTNAME} ${HOSTNAME}.local/" -i /etc/hosts
 
