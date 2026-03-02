@@ -33,10 +33,9 @@ The option `-o StrictHostKeyChecking=no` tells it not to ask if you want to conn
 `$(whoami)` selects the appropriate user name to connect to the remote VMs. On VirtualBox this evaluates to `vagrant`; on Apple Silicon it is `ubuntu`.
 
 ```bash
-ssh-copy-id -o StrictHostKeyChecking=no $(whoami)@controlplane02
-ssh-copy-id -o StrictHostKeyChecking=no $(whoami)@loadbalancer
-ssh-copy-id -o StrictHostKeyChecking=no $(whoami)@node01
-ssh-copy-id -o StrictHostKeyChecking=no $(whoami)@node02
+for host in controlplane02 loadbalancer node01 node02; do
+    sshpass -p "vagrant" ssh-copy-id -o StrictHostKeyChecking=no $(whoami)@$host
+done
 ```
 
 

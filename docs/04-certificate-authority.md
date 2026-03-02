@@ -392,21 +392,25 @@ If there are any errors, please review above steps and then re-verify
 Copy the appropriate certificates and private keys to each instance:
 
 ```bash
-{
-for instance in controlplane01 controlplane02; do
-  scp -o StrictHostKeyChecking=no ca.crt ca.key kube-apiserver.key kube-apiserver.crt \
-    apiserver-kubelet-client.crt apiserver-kubelet-client.key \
-    service-account.key service-account.crt \
-    etcd-server.key etcd-server.crt \
-    kube-controller-manager.key kube-controller-manager.crt \
-    kube-scheduler.key kube-scheduler.crt \
-    ${instance}:~/
+# Copy all certificates and keys to the respective host and there resepctive directories
+cd tools
+bash -c ./master-copy.sh
+bash -c ./master-verify.sh
+
+
+
+for instance in controlplane01 controlplane02 node01 node02; do
+    echo ""
+    echo "╔══════════════════════════════════════╗"
+    echo "║  Node: ${instance}$(printf '%*s' $((28 - ${#instance})) '')║"
+    echo "╠══════════════════════════════════════╣"
+    ssh -o StrictHostKeyChecking=no ${instance} ls ~/ | while read line; do
+        echo "║  📄 ${line}$(printf '%*s' $((32 - ${#line})) '')║"
+    done
+    echo "╚══════════════════════════════════════╝"
+    echo ""
 done
 
-for instance in node01 node02 ; do
-  scp ca.crt kube-proxy.crt kube-proxy.key ${instance}:~/
-done
-}
 ```
 
 ## Optional - Check Certificates on controlplane02
