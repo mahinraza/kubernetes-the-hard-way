@@ -20,6 +20,8 @@ RESOURCES = {
   },
 }
 
+IP_NW = "192.168.29."
+
 # Sets up hosts file and DNS
 def setup_dns(node)
   # Set up /etc/hosts
