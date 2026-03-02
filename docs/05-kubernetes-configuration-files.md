@@ -18,6 +18,7 @@ Each kubeconfig requires a Kubernetes API Server to connect to. To support high 
 
 ```bash
 LOADBALANCER=$(dig +short loadbalancer)
+echo $LOADBALANCER
 ```
 
 ### The kube-proxy Kubernetes Configuration File
@@ -162,7 +163,20 @@ Copy the appropriate `kube-proxy` kubeconfig files to each worker instance:
 
 ```bash
 for instance in node01 node02; do
-  scp kube-proxy.kubeconfig ${instance}:~/
+  echo "=== Copying kube-proxy config to ${instance} ==="
+  
+  # Copy to home directory first
+  scp -o StrictHostKeyChecking=no kube-proxy.kubeconfig ${instance}:~/
+  
+  # Move to proper location and set permissions
+  ssh -o StrictHostKeyChecking=no ${instance} "
+    sudo mkdir -p /var/lib/kube-proxy
+    sudo mv ~/kube-proxy.kubeconfig /var/lib/kube-proxy/kube-proxy.kubeconfig
+    sudo chown root:root /var/lib/kube-proxy/kube-proxy.kubeconfig
+    sudo chmod 600 /var/lib/kube-proxy/kube-proxy.kubeconfig
+    echo '✓ kube-proxy config installed'
+    sudo ls -la /var/lib/kube-proxy/
+  "
 done
 ```
 
@@ -170,7 +184,53 @@ Copy the appropriate `admin.kubeconfig`, `kube-controller-manager` and `kube-sch
 
 ```bash
 for instance in controlplane01 controlplane02; do
-  scp admin.kubeconfig kube-controller-manager.kubeconfig kube-scheduler.kubeconfig ${instance}:~/
+  echo "=== Copying configs to ${instance} ==="
+  
+  # Copy all config files to home directory
+  scp -o StrictHostKeyChecking=no \
+    admin.kubeconfig \
+    kube-controller-manager.kubeconfig \
+    kube-scheduler.kubeconfig \
+    ${instance}:~/
+  
+  # Move to proper locations and set permissions
+  ssh -o StrictHostKeyChecking=no ${instance} "
+    # Admin kubeconfig (for kubectl)
+    sudo mkdir -p /root/.kube
+    sudo mv ~/admin.kubeconfig /root/.kube/config
+    sudo chown root:root /root/.kube/config
+    sudo chmod 600 /root/.kube/config
+    
+    # Controller manager kubeconfig
+    sudo mkdir -p /var/lib/kubernetes
+    sudo mv ~/kube-controller-manager.kubeconfig /var/lib/kubernetes/
+    sudo chown root:root /var/lib/kubernetes/kube-controller-manager.kubeconfig
+    sudo chmod 600 /var/lib/kubernetes/kube-controller-manager.kubeconfig
+    
+    # Scheduler kubeconfig
+    sudo mv ~/kube-scheduler.kubeconfig /var/lib/kubernetes/
+    sudo chown root:root /var/lib/kubernetes/kube-scheduler.kubeconfig
+    sudo chmod 600 /var/lib/kubernetes/kube-scheduler.kubeconfig
+    
+    echo '✓ Config files installed:'
+    sudo ls -la /root/.kube/
+    sudo ls -la /var/lib/kubernetes/
+  "
+done
+
+# Verify worker nodes
+for instance in node01 node02; do
+  echo "=== ${instance} kube-proxy config ==="
+  ssh -o StrictHostKeyChecking=no ${instance} "sudo ls -la /var/lib/kube-proxy/"
+done
+
+# Verify control plane nodes
+for instance in controlplane01 controlplane02; do
+  echo "=== ${instance} configs ==="
+  ssh -o StrictHostKeyChecking=no ${instance} "
+    sudo ls -la /root/.kube/
+    sudo ls -la /var/lib/kubernetes/
+  "
 done
 ```
 
