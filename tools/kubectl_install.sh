@@ -6,7 +6,6 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-PURPLE='\033[0;35m'
 NC='\033[0m' # No Color
 
 # Check if ARCH is set
@@ -27,14 +26,15 @@ for host in controlplane01 controlplane02 loadbalancer node01 node02; do
     USER=$(whoami)
     echo -e "${YELLOW}🔌 Connecting to $host...${NC}"
     
+    # SSH command without color codes inside (they won't work remotely)
     ssh -o ConnectTimeout=5 ${USER}@${host} "
         set -e
         
-        echo '${PURPLE}📥 Downloading kubectl on $host...${NC}'
-        if curl -LO https://dl.k8s.io/release/${VERSION}/bin/linux/${ARCH}/kubectl &> /dev/null; then
-            echo '${GREEN}✓ Download complete${NC}'
+        echo '📥 Downloading kubectl on $host...'
+        if curl -LO https://dl.k8s.io/release/${VERSION}/bin/linux/${ARCH}/kubectl &> /dev/null ; then
+            echo '✓ Download complete'
         else
-            echo '${RED}✗ Download failed${NC}'
+            echo '✗ Download failed'
             exit 1
         fi
         
@@ -43,8 +43,15 @@ for host in controlplane01 controlplane02 loadbalancer node01 node02; do
         
         echo '✅ kubectl installed successfully'
         echo '📋 Version:'
-        kubectl version --client
-    "    
+        kubectl version --client --short
+    "
+    
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✓ Successfully installed kubectl on $host${NC}"
+    else
+        echo -e "${RED}✗ Failed to install kubectl on $host${NC}"
+    fi
+    
     echo "---"
 done
 
