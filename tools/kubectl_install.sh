@@ -24,7 +24,7 @@ for host in controlplane01 controlplane02 loadbalancer node01 node02; do
         
         echo -e '${YELLOW}📥 Downloading kubectl on $host...${NC}'
         # Download kubectl with progress
-        curl -LO https://dl.k8s.io/release/${VERSION}/bin/linux/${ARCH}/kubectl
+        curl -LO https://dl.k8s.io/release/${VERSION}/bin/linux/${ARCH}/kubectl &> /dev/null
         
         if [ $? -eq 0 ]; then
           echo -e "${GREEN}✓ Successfully installed kubectl on $host${NC}"
