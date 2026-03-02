@@ -16,7 +16,7 @@ for host in controlplane01 controlplane02 loadbalancer node01 node02; do
         echo 'Installing kubectl on $host...'
         
         # Download kubectl
-        curl -LO https://dl.k8s.io/release/${VERSION}/bin/linux/${ARCH}/kubectl
+        curl -LO https://dl.k8s.io/release/${VERSION}/bin/linux/${ARCH}/kubectl 1> /dev/null
         
         # Make executable and move
         chmod +x kubectl
@@ -24,7 +24,7 @@ for host in controlplane01 controlplane02 loadbalancer node01 node02; do
         
         # Verify installation
         echo '✓ kubectl version:'
-        kubectl version --client --short
+        kubectl version --client
     "
     
     if [ $? -eq 0 ]; then
