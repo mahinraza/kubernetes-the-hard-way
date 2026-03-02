@@ -35,18 +35,18 @@ done
 for instance in controlplane01 controlplane02; do
   echo "Verify ownership and permissions on ${instance}:"
   ssh -o StrictHostKeyChecking=no ${instance} "   
-    ls -ld /etc/kubernetes/pki
-    ls -l /etc/kubernetes/pki/ | head -5
-    ls -l /etc/kubernetes/pki/etcd/
+    sudo ls -ld /etc/kubernetes/pki
+    sudo ls -l /etc/kubernetes/pki/ | head -5
+    sudo ls -l /etc/kubernetes/pki/etcd/
   "
 done
 
 for instance in node01 node02; do
   echo "Verify ownership and permissions on ${instance}:"
   ssh -o StrictHostKeyChecking=no ${instance} "
-    ls -ld /etc/kubernetes/pki
-    ls -l /etc/kubernetes/pki/ca.crt
-    ls -ld /var/lib/kube-proxy
-    ls -l /var/lib/kube-proxy/
+    sudo ls -ld /etc/kubernetes/pki
+    sudo ls -l /etc/kubernetes/pki/ca.crt
+    sudo ls -ld /var/lib/kube-proxy
+    sudo ls -l /var/lib/kube-proxy/
   "
 done
