@@ -13,7 +13,7 @@ Generate SSH key pair on `controlplane01` node:
 [//]: # (host:controlplane01)
 
 ```bash
-ssh-keygen
+ssh-keygen -t ed25519 -b 4096 -f ~/.ssh/kubernetes -N ""
 ```
 
 Leave all settings to default by pressing `ENTER` at any prompt.
@@ -21,7 +21,7 @@ Leave all settings to default by pressing `ENTER` at any prompt.
 Add this key to the local `authorized_keys` (`controlplane01`) as in some commands we `scp` to ourself.
 
 ```bash
-cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
+cat ~/.ssh/kubernetes.pub >> ~/.ssh/authorized_keys
 ```
 
 Copy the key to the other hosts. You will be asked to enter a password for each of the `ssh-copy-id` commands. The password is:
@@ -38,8 +38,6 @@ for host in controlplane02 loadbalancer node01 node02; do
 done
 ```
 
-
-
 For each host, the output should be similar to this. If it is not, then you may have entered an incorrect password. Retry the step.
 
 ```
@@ -48,18 +46,9 @@ Number of key(s) added: 1
 
 Verify connection
 
-```
-ssh controlplane01
-exit
-
-ssh controlplane02
-exit
-
-ssh node01
-exit
-
-ssh node02
-exit
+```bash
+chmod +x tools/ssh_verify.sh
+bash -c tools/ssh_verify.sh
 ```
 
 
