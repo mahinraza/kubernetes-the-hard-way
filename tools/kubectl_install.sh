@@ -8,6 +8,13 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Check if ARCH is set
+if [ -z "$ARCH" ]; then
+    echo -e "${RED}❌ ARCH variable is not set!${NC}"
+    echo "Please set ARCH variable first (e.g., export ARCH=amd64 or export ARCH=arm64)"
+    exit 1
+fi
+
 # Get the stable version
 echo -e "${BLUE}📡 Fetching latest kubectl version...${NC}"
 VERSION=$(curl -L -s https://dl.k8s.io/release/stable.txt)
@@ -22,28 +29,24 @@ for host in controlplane01 controlplane02 loadbalancer node01 node02; do
     ssh -o ConnectTimeout=5 ${USER}@${host} "
         set -e
         
-        echo -e '${YELLOW}📥 Downloading kubectl on $host...${NC}'
-        # Download kubectl with progress
-        curl -LO https://dl.k8s.io/release/${VERSION}/bin/linux/${ARCH}/kubectl &> /dev/null
+        echo '📥 Downloading kubectl on $host...'
+        curl -LO https://dl.k8s.io/release/${VERSION}/bin/linux/${ARCH}/kubectl
         
-        if [ $? -eq 0 ]; then
-          echo -e "${GREEN}✓ Successfully installed kubectl on $host${NC}"
-        else
-          echo -e "${RED}✗ Failed to install kubectl on $host${NC}"
-        fi
-
-        echo -e '${YELLOW}🔧 Installing kubectl on $host...${NC}'
-        # Make executable and move
+        echo '🔧 Installing kubectl...'
         chmod +x kubectl
         sudo mv kubectl /usr/local/bin/
         
-        # Verify installation
-        echo -e '${GREEN}✅ kubectl installed successfully on $host${NC}'
-        echo -e '${BLUE}📋 Version on $host:${NC}'
+        echo '✅ kubectl installed successfully'
+        echo '📋 Version:'
         kubectl version --client --short
     "
     
-
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✓ Successfully installed kubectl on $host${NC}"
+    else
+        echo -e "${RED}✗ Failed to install kubectl on $host${NC}"
+    fi
+    
     echo "---"
 done
 
