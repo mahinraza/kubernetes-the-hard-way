@@ -43,7 +43,7 @@ for host in controlplane01 controlplane02 loadbalancer node01 node02; do
         
         echo '✅ kubectl installed successfully'
         echo '📋 Version:'
-        kubectl version --client --short
+        kubectl version --client
     "
     
     if [ $? -eq 0 ]; then
