@@ -30,7 +30,7 @@ for host in controlplane01 controlplane02 loadbalancer node01 node02; do
         set -e
         
         echo '📥 Downloading kubectl on $host...'
-        curl -LO https://dl.k8s.io/release/${VERSION}/bin/linux/${ARCH}/kubectl
+        curl -LO https://dl.k8s.io/release/${VERSION}/bin/linux/${ARCH}/kubectl &> /dev/null
         
         echo '🔧 Installing kubectl...'
         chmod +x kubectl
