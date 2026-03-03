@@ -37,7 +37,7 @@ def setup_dns(node)
 end
 
 # Sets up passwordless sudo and ssh access for the vagrant user
-def setup_ssh()
+def setup_ssh(node)
   node.vm.provision "setup-ssh", :type => "shell", :path => "ubuntu/ssh.sh"
 end
 
@@ -95,7 +95,7 @@ Vagrant.configure("2") do |config|
     node.vm.provision "file", source: "./ubuntu/vimrc", destination: "$HOME/.vimrc"
     node.vm.provision "file", source: "../tools/approve-csr.sh", destination: "$HOME/approve-csr.sh"
     provision_kubernetes_node node
-    setup_ssh
+    setup_ssh node
   end
 
   # Provision Control Nodes
@@ -110,7 +110,7 @@ Vagrant.configure("2") do |config|
       node.vm.hostname = "controlplane0#{i}"
       node.vm.network :private_network, ip: IP_NW + "#{MASTER_IP_START + i}"
       provision_kubernetes_node node
-      setup_ssh
+      setup_ssh node
     end
   end
 
@@ -139,7 +139,7 @@ Vagrant.configure("2") do |config|
       node.vm.hostname = "node0#{i}"
       node.vm.network :private_network, ip: IP_NW + "#{NODE_IP_START + i}"
       provision_kubernetes_node node
-      setup_ssh
+      setup_ssh node
     end
   end
 end
