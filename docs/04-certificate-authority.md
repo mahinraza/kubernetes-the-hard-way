@@ -387,6 +387,12 @@ kube-proxy cert and key are correct
 
 If there are any errors, please review above steps and then re-verify
 
+## Use this script to eliminate manual steps
+```bash
+chmod +x pki_setup.sh
+```
+
+
 ## Distribute the Certificates
 
 Copy the appropriate certificates and private keys to each instance:

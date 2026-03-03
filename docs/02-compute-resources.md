@@ -55,9 +55,7 @@ This does the below:
 There are two ways to SSH into the nodes:
 
 ### 1. SSH using Vagrant (Recommended)
-
 From the directory you ran the `vagrant up` command, run `vagrant ssh <vm>`:
-
 ```bash
 vagrant ssh controlplane01
 vagrant ssh controlplane02
@@ -66,24 +64,21 @@ vagrant ssh loadbalancer
 vagrant ssh jumphost
 ```
 
-### 2. SSH Using Node IP
-
-```bash
-ssh vagrant@192.168.56.41   # controlplane01
-ssh vagrant@192.168.56.42   # controlplane02
-ssh vagrant@192.168.56.51   # node01
-ssh vagrant@192.168.56.60   # loadbalancer
-ssh vagrant@192.168.56.71   # jumphost
-```
-
-### 3. SSH on jumphost Using Localhost with Port Forwarding
-
+### 2. SSH on jumphost Using Localhost with Port Forwarding
 ```bash
 ssh -p 2710 vagrant@127.0.0.1   # controlplane01
 ```
 
-> Username/password: `vagrant/vagrant`
+### 3. SSH Using Node IP
+```bash
+ssh -i ~/.ssh/kubernetes vagrant@192.168.56.41   # controlplane01
+ssh -i ~/.ssh/kubernetes vagrant@192.168.56.42   # controlplane02
+ssh -i ~/.ssh/kubernetes vagrant@192.168.56.51   # node01
+ssh -i ~/.ssh/kubernetes vagrant@192.168.56.60   # loadbalancer
+ssh -i ~/.ssh/kubernetes vagrant@192.168.56.71   # jumphost
+```
 
+> Username/password: `vagrant/vagrant`
 Private key path for each VM:
 - `.vagrant/machines/<machine name>/virtualbox/private_key`
 
