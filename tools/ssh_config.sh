@@ -7,7 +7,7 @@ AVAILABLE_NODES=()
 for node in "${NODES[@]}"; do
     echo -ne "  Testing $node... "
     if ping -c 1 -W 2 $node &> /dev/null; then
-        echo -e "${GREEN}${node}..OK${NC}"
+        echo -e "${GREEN}${node} OK${NC}"
         AVAILABLE_NODES+=($node)
     else
         echo -e "${RED}Unable to reach $node. Skipping SSH setup for this node.${NC}"
