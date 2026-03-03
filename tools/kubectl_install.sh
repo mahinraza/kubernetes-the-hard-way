@@ -20,7 +20,7 @@ for host in controlplane01 controlplane02 loadbalancer node01 node02; do
     echo -e "${YELLOW}🔌 Connecting to $host...${NC}"
     
     # SSH command without color codes inside (they won't work remotely)
-    ssh -o ConnectTimeout=5 ${USER}@${host} "
+    ssh -o ConnectTimeout=5 -i ~/.ssh/kubernetes ${USER}@${host} "
         set -e
         
         echo '📥 Downloading kubectl on $host...'

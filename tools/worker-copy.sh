@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+set -e
+
 for instance in node01 node02; do
 
   if dig +short ${instance} &> /dev/null; then

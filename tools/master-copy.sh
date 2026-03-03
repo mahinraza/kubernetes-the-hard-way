@@ -1,3 +1,6 @@
+#!/usr/bin/env bash
+set -e
+
 for instance in controlplane01 controlplane02; do
 
   if dig +short ${instance} &> /dev/null; then
