@@ -6,7 +6,7 @@ RESOURCES = {
     1 => {
       # controlplane01 bigger since it may run e2e tests.
       "ram" => 2048,
-      "cpu" => 2,
+      "cpu" => 1,
     },
     2 => {
       # All additional masters get this
@@ -16,6 +16,10 @@ RESOURCES = {
   },
   "worker" => {
     "ram" => 1024,
+    "cpu" => 1,
+  },
+  "jumphost" => {
+    "ram" => 2024,
     "cpu" => 1,
   },
 }
@@ -32,12 +36,15 @@ def setup_dns(node)
   node.vm.provision "setup-dns", type: "shell", :path => "ubuntu/update-dns.sh"
 end
 
+# Sets up passwordless sudo and ssh access for the vagrant user
+def setup_ssh()
+  node.vm.provision "setup-ssh", :type => "shell", :path => "ubuntu/ssh.sh"
+end
+
 # Runs provisioning steps that are required by masters and workers
 def provision_kubernetes_node(node)
   # Set up kernel parameters, modules and tunables
   node.vm.provision "setup-kernel", :type => "shell", :path => "ubuntu/setup-kernel.sh"
-  # Set up ssh
-  node.vm.provision "setup-ssh", :type => "shell", :path => "ubuntu/ssh.sh"
   # Set up DNS
   setup_dns node
   # Install cert verification script
@@ -46,12 +53,13 @@ end
 
 # Define the number of master and worker nodes. You should not change this
 NUM_CONTROL_NODES = 2
-NUM_WORKER_NODE = 2
+NUM_WORKER_NODE = 1
 
 # Host address start points
 MASTER_IP_START = 40
 NODE_IP_START = 50
 LB_IP_START = 60
+JUMPHOST_IP_START = 70
 
 # All Vagrant configuration is done below. The "2" in Vagrant.configure
 # configures the configuration version (we support older styles for
@@ -73,6 +81,23 @@ Vagrant.configure("2") do |config|
   # `vagrant box outdated`. This is not recommended.
   config.vm.box_check_update = false
 
+  config.vm.define "jumphost" do |node|
+    node.vm.provider "virtualbox" do |vb|
+      vb.name = "jumphost"
+      vb.memory = RESOURCES["jumphost"]["ram"]
+      vb.cpu = RESOURCES["jumphost"]["cpu"]
+    end
+    node.vm.hostname = "jumphost"
+    node.vm.network :private_network, ip: IP_NW + "#{JUMPHOST_IP_START + 1}"
+    node.vm.network "forwarded_port", guest: 22, host: 2710
+    # Install (opinionated) configs for vim and tmux on controlplane01. These used by the author for CKA exam.
+    node.vm.provision "file", source: "./ubuntu/tmux.conf", destination: "$HOME/.tmux.conf"
+    node.vm.provision "file", source: "./ubuntu/vimrc", destination: "$HOME/.vimrc"
+    node.vm.provision "file", source: "../tools/approve-csr.sh", destination: "$HOME/approve-csr.sh"
+    provision_kubernetes_node node
+    setup_ssh
+  end
+
   # Provision Control Nodes
   (1..NUM_CONTROL_NODES).each do |i|
     config.vm.define "controlplane0#{i}" do |node|
@@ -84,14 +109,8 @@ Vagrant.configure("2") do |config|
       end
       node.vm.hostname = "controlplane0#{i}"
       node.vm.network :private_network, ip: IP_NW + "#{MASTER_IP_START + i}"
-      node.vm.network "forwarded_port", guest: 22, host: "#{2710 + i}"
       provision_kubernetes_node node
-      if i == 1
-        # Install (opinionated) configs for vim and tmux on controlplane01. These used by the author for CKA exam.
-        node.vm.provision "file", source: "./ubuntu/tmux.conf", destination: "$HOME/.tmux.conf"
-        node.vm.provision "file", source: "./ubuntu/vimrc", destination: "$HOME/.vimrc"
-        node.vm.provision "file", source: "../tools/approve-csr.sh", destination: "$HOME/approve-csr.sh"
-      end
+      setup_ssh
     end
   end
 
@@ -104,7 +123,6 @@ Vagrant.configure("2") do |config|
     end
     node.vm.hostname = "loadbalancer"
     node.vm.network :private_network, ip: IP_NW + "#{LB_IP_START}"
-    node.vm.network "forwarded_port", guest: 22, host: 2730
     # Set up ssh
     node.vm.provision "setup-ssh", :type => "shell", :path => "ubuntu/ssh.sh"
     setup_dns node
@@ -120,8 +138,8 @@ Vagrant.configure("2") do |config|
       end
       node.vm.hostname = "node0#{i}"
       node.vm.network :private_network, ip: IP_NW + "#{NODE_IP_START + i}"
-      node.vm.network "forwarded_port", guest: 22, host: "#{2720 + i}"
       provision_kubernetes_node node
+      setup_ssh
     end
   end
 end

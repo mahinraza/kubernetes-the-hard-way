@@ -1,6 +1,6 @@
 # Provisioning a CA and Generating TLS Certificates
 
-In this lab you will provision a [PKI Infrastructure](https://en.wikipedia.org/wiki/Public_key_infrastructure) using the popular openssl tool, then use it to bootstrap a Certificate Authority, and generate TLS certificates for the following components: etcd, kube-apiserver, kube-controller-manager, kube-scheduler, kubelet, and kube-proxy.
+In this lab you will provision a [PKI Infrastructure](https://en.wikipedia.org/wiki/Public_key_infrastructure) using the popular `openssl` tool, then use it to bootstrap a Certificate Authority, and generate TLS certificates for the following components: etcd, kube-apiserver, kube-controller-manager, kube-scheduler, kubelet, and kube-proxy.
 
 # Where to do these?
 
@@ -398,21 +398,7 @@ bash -c ./master-copy.sh
 bash -c ./master-verify.sh
 bash -c ./worker-copy.sh
 bash -c ./worker-verify.sh
-
-
-
-for instance in controlplane01 controlplane02 node01 node02; do
-    echo ""
-    echo "╔══════════════════════════════════════╗"
-    echo "║  Node: ${instance}$(printf '%*s' $((28 - ${#instance})) '')║"
-    echo "╠══════════════════════════════════════╣"
-    ssh -o StrictHostKeyChecking=no ${instance} ls ~/ | while read line; do
-        echo "║  📄 ${line}$(printf '%*s' $((32 - ${#line})) '')║"
-    done
-    echo "╚══════════════════════════════════════╝"
-    echo ""
-done
-
+bash -c ./verify_certs.sh
 ```
 
 ## Optional - Check Certificates on controlplane02

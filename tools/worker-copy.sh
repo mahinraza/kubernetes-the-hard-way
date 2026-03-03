@@ -1,20 +1,20 @@
 for instance in node01 node02; do
 
   if dig +short ${instance} &> /dev/null; then
-    echo "Instance ${instance} is reachable, proceeding with file copy..."
+    echo "${GREEN}Instance ${instance} is reachable, proceeding with file copy...${NC}"
   else
-    echo "Error: Instance ${instance} is not reachable. Please check your network and DNS settings."
+    echo "${RED}Error: Instance ${instance} is not reachable. Please check your network and DNS settings.${NC}"
     continue
   fi
 
   if ping -c 1 ${instance} &> /dev/null; then
-    echo "Instance ${instance} is responding to ping, proceeding with file copy..."
+    echo "${GREEN}Instance ${instance} is responding to ping, proceeding with file copy...${NC}"
   else
-    echo "Error: Instance ${instance} is not responding to ping. Please check your network connectivity."
+    echo "${RED}Error: Instance ${instance} is not responding to ping. Please check your network connectivity.${NC}"
     continue
   fi
 
-  echo "Copying files to ${instance}..."
+  echo "${YELLOW}Copying files to ${instance}...${NC}"
   # Create temp directory
   ssh -o StrictHostKeyChecking=no ${instance} "mkdir -p ~/temp-certs"
   
@@ -32,5 +32,5 @@ for instance in node01 node02; do
     rm -rf ~/temp-certs
   "
   
-  echo "Files copied to ${instance} successfully"
+  echo "${GREEN}Files copied to ${instance} successfully${NC}"
 done

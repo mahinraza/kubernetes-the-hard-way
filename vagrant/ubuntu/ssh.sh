@@ -25,7 +25,7 @@ fi
 echo "vagrant ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/vagrant
 sudo chmod 440 /etc/sudoers.d/vagrant
 
-if [ "$(hostname)" = "controlplane01" ]
+if [ "$(hostname)" = "jumphost" ]
 then
     sh -c 'sudo apt update' &> /dev/null
     sh -c 'sudo apt-get install -y sshpass' &> /dev/null

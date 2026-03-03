@@ -1,20 +1,20 @@
 for instance in node01 node02; do
 
   if dig +short ${instance} &> /dev/null; then
-    echo "Instance ${instance} is reachable, proceeding with verification..."
+    echo "${GREEN}Instance ${instance} is reachable, proceeding with verification...${NC}"
   else
-    echo "Error: Instance ${instance} is not reachable. Please check your network and DNS settings."
+    echo "${RED}Error: Instance ${instance} is not reachable. Please check your network and DNS settings.${NC}"
     continue
   fi
 
   if ping -c 1 ${instance} &> /dev/null; then
-    echo "Instance ${instance} is responding to ping, proceeding with verification..."
+    echo "${GREEN}Instance ${instance} is responding to ping, proceeding with verification...${NC}"
   else
-    echo "Error: Instance ${instance} is not responding to ping. Please check your network connectivity."
+    echo "${RED}Error: Instance ${instance} is not responding to ping. Please check your network connectivity.${NC}"
     continue
   fi
 
-  echo "=== Verifying certificates on ${instance} ==="
+  echo "${YELLOW}=== Verifying certificates on ${instance} ===${NC}"
   ssh -o StrictHostKeyChecking=no ${instance} "
     echo 'Checking PKI directory(/etc/kubernetes/pki/):'
     sudo ls -la /etc/kubernetes/pki/
@@ -38,6 +38,6 @@ for instance in node01 node02; do
       echo '✗ kube-proxy certificates missing'
     fi
   "
-  echo "======================================"
+  echo "${YELLOW}======================================${NC}"
   echo ""
 done

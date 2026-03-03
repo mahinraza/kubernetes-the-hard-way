@@ -17,6 +17,14 @@ echo "PRIMARY_IP=${PRIMARY_IP}" >> /etc/environment
 # Export architecture as environment variable to download correct versions of software
 echo "ARCH=amd64"  | sudo tee -a /etc/environment > /dev/null
 
+sudo tee /etc/profile.d/colors.sh > /dev/null <<EOF
+export RED="\033[0;31m"
+export GREEN="\033[0;32m"
+export YELLOW="\033[1;33m"
+export BLUE="\033[0;34m"
+export NC="\033[0m"
+EOF
+
 # remove ubuntu-jammy entry
 sed -e '/^.*ubuntu-jammy.*/d' -i /etc/hosts
 sed -e "/^.*$2.*/d" -i /etc/hosts
@@ -28,4 +36,5 @@ ${NETWORK}.42  controlplane02
 ${NETWORK}.51  node01
 ${NETWORK}.52  node02
 ${NETWORK}.60  loadbalancer
+${NETWORK}.71  jumphost
 EOF
