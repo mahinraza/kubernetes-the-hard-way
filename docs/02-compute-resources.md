@@ -26,7 +26,7 @@ vagrant up
 
 This does the below:
 
-- Deploys 5 VMs - 2 controlplane, 2 worker and 1 loadbalancer with the name `kubernetes-ha-*`
+- Deploys 5 VMs - 1 jumphost, 2 controlplane, 1 worker and 1 loadbalancer with the name `kubernetes-ha-*`
     > This is the default settings. This can be changed at the top of the Vagrantfile.
     > If you choose to change these settings, please also update `vagrant/ubuntu/vagrant/setup-hosts.sh`
     > to add the additional hosts to the `/etc/hosts` default before running `vagrant up`.
@@ -35,11 +35,11 @@ This does the below:
 
     | VM | VM Name | Purpose | IP | Forwarded Port | RAM |
     |-----------|--------------------------|:---------:|-------------:|-----------------:|------:|
-    | controlplane01 | kubernetes-ha-controlplane-1 | Master | 192.168.56.41 | 2711 | 2048 |
-    | controlplane02 | kubernetes-ha-controlplane-2 | Master | 192.168.56.42 | 2712 | 2048 |
-    | node01 | kubernetes-ha-node-1 | Worker | 192.168.56.51 | 2721 | 1024 |
-    | node02 | kubernetes-ha-node-2 | Worker | 192.168.56.52 | 2722 | 1024 |
-    | loadbalancer | kubernetes-ha-lb | LoadBalancer | 192.168.56.60 | 2730 | 512 |
+    | controlplane01 | kubernetes-ha-controlplane-1 | Master | 192.168.56.41 |  | 2048 |
+    | controlplane02 | kubernetes-ha-controlplane-2 | Master | 192.168.56.42 |  | 2048 |
+    | node01 | kubernetes-ha-node-1 | Worker | 192.168.56.51 |  | 1024 |
+    | loadbalancer | kubernetes-ha-lb | LoadBalancer | 192.168.56.60 |  | 512 |
+    | jumphost | kubernetes-ha-jumphost | Jumphost | 192.168.56.71 | 2710 | 2048 |
 
     > These are the default settings and can be changed in the Vagrantfile.
 
@@ -62,8 +62,8 @@ From the directory you ran the `vagrant up` command, run `vagrant ssh <vm>`:
 vagrant ssh controlplane01
 vagrant ssh controlplane02
 vagrant ssh node01
-vagrant ssh node02
 vagrant ssh loadbalancer
+vagrant ssh jumphost
 ```
 
 ### 2. SSH Using Node IP
@@ -72,18 +72,14 @@ vagrant ssh loadbalancer
 ssh vagrant@192.168.56.41   # controlplane01
 ssh vagrant@192.168.56.42   # controlplane02
 ssh vagrant@192.168.56.51   # node01
-ssh vagrant@192.168.56.52   # node02
 ssh vagrant@192.168.56.60   # loadbalancer
+ssh vagrant@192.168.56.71   # jumphost
 ```
 
-### 3. SSH Using Localhost with Port Forwarding
+### 3. SSH on jumphost Using Localhost with Port Forwarding
 
 ```bash
-ssh -p 2711 vagrant@127.0.0.1   # controlplane01
-ssh -p 2712 vagrant@127.0.0.1   # controlplane02
-ssh -p 2721 vagrant@127.0.0.1   # node01
-ssh -p 2722 vagrant@127.0.0.1   # node02
-ssh -p 2730 vagrant@127.0.0.1   # loadbalancer
+ssh -p 2710 vagrant@127.0.0.1   # controlplane01
 ```
 
 > Username/password: `vagrant/vagrant`
