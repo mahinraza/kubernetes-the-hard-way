@@ -19,5 +19,10 @@ echo -e "${GREEN}Available nodes for SSH setup: ${AVAILABLE_NODES[*]}${NC}"
 # This script sets up passwordless SSH access from controlplane01 to all other machines in the cluster
 for host in "${AVAILABLE_NODES[@]}"; do
     echo -e "${GREEN}Setting up passwordless SSH from jumphost to $host${NC}"
-    sshpass -p "vagrant" ssh-copy-id -o StrictHostKeyChecking=no -i ~/.ssh/kubernetes.pub $(whoami)@$host
+    sshpass -p "vagrant" ssh-copy-id -o StrictHostKeyChecking=no -i ~/.ssh/kubernetes.pub $(whoami)@$host &> /dev/null
+    if [ $? -eq 0 ]; then
+        echo -e "${GREEN}✓ Passwordless SSH setup successful for $host${NC}"
+    else
+        echo -e "${RED}✗ Failed to set up passwordless SSH for $host${NC}"
+    fi
 done
