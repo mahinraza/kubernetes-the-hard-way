@@ -22,6 +22,7 @@ Add this key to the local `authorized_keys` (`controlplane01`) as in some comman
 
 ```bash
 cat ~/.ssh/kubernetes.pub >> ~/.ssh/authorized_keys
+cat ~/.ssh/authorized_keys
 ```
 
 Copy the key to the other hosts. You will be asked to enter a password for each of the `ssh-copy-id` commands. The password is:
