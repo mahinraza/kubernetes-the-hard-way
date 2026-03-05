@@ -19,7 +19,7 @@ RESOURCES = {
     "cpu" => 1,
   },
   "jumphost" => {
-    "ram" => 2024,
+    "ram" => 1024,
     "cpu" => 1,
   },
 }
