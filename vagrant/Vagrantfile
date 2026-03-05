@@ -53,7 +53,7 @@ end
 
 # Define the number of master and worker nodes. You should not change this
 NUM_CONTROL_NODES = 2
-NUM_WORKER_NODE = 1
+NUM_WORKER_NODE = 2
 
 # Host address start points
 MASTER_IP_START = 40
