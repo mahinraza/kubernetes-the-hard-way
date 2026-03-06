@@ -36,6 +36,6 @@ ${NETWORK}.41  masterone.example.com masterone
 ${NETWORK}.42  mastertwo.example.com mastertwo
 ${NETWORK}.51  workerone.example.com workerone
 ${NETWORK}.52  workertwo.example.com workertwo
-${NETWORK}.60  lbone.example.com lbone
+${NETWORK}.61  lbone.example.com lbone
 ${NETWORK}.71  jumphost.example.com jumphost
 EOF
