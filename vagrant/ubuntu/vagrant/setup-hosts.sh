@@ -16,6 +16,7 @@ echo "PRIMARY_IP=${PRIMARY_IP}" >> /etc/environment
 
 # Export architecture as environment variable to download correct versions of software
 echo "ARCH=amd64"  | sudo tee -a /etc/environment > /dev/null
+echo 'export ARCH=amd64' >> ~/.bashrc
 
 sudo tee /etc/profile.d/colors.sh > /dev/null <<EOF
 export RED="\033[0;31m"

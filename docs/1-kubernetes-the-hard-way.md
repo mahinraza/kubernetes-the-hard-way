@@ -78,7 +78,7 @@ Vagrant provides an easier way to deploy multiple virtual machines on VirtualBox
 
 ---
 
-### **Provisioning Compute Resources/Infrastructure**
+### **Provisioning Compute Resources/Infrastructure(Jumphost)**
 
 * Download this github repository and cd into the vagrant folder:
   ```bash
@@ -121,7 +121,7 @@ Vagrant provides an easier way to deploy multiple virtual machines on VirtualBox
 
 ---
 
-### **Setup SSH between jumphost and all other nodes**
+### **Setup SSH between jumphost and all other nodes(Jumphost)**
 
 * Create an SSH key pair for the user who we are logged in as (this is `vagrant` on VirtualBox, `ubuntu` on Apple Silicon).
 * Copy the public key of this pair to the other nodes to permit us to use password-less SSH (and SCP).
@@ -155,7 +155,7 @@ Vagrant provides an easier way to deploy multiple virtual machines on VirtualBox
 
 ---
 
-### **Managing the Lab Environment**
+### **Managing the Lab Environment(from jumphost)**
 
 #### There are 3 ways to SSH into the nodes:
 
@@ -276,7 +276,7 @@ Vagrant provides an easier way to deploy multiple virtual machines on VirtualBox
 
 ---
 
-### **Installing the Client Tools**
+### **Installing the Client Tools(from jumphost)**
 
 * From this point forward, all steps are identical for both VirtualBox and Apple Silicon environments
 * The instructions now focus exclusively on configuring Kubernetes itself on the Linux hosts that have already been provisioned
@@ -294,8 +294,8 @@ Vagrant provides an easier way to deploy multiple virtual machines on VirtualBox
 * We will be using `kubectl` early on to generate `kubeconfig` files for the controlplane components.
 * The environment variable `ARCH` is pre-set during VM deployment according to whether using VirtualBox (`amd64`) or Apple Silicon (`arm64`) to ensure the correct version of this and later software is downloaded for your machine architecture.
   ```bash
-  for instance in node02 localhost controlplane01 controlplane02; do
-    echo "📦 Installing kubectl on $instance..."
+  for instance in node01 node02 localhost controlplane01 controlplane02; do
+    echo "Installing kubectl on $instance..."
     
     # Use ssh to run commands remotely
     ssh -o StrictHostKeyChecking=no -i ~/.ssh/kubernetes vagrant@${instance} "
@@ -312,7 +312,8 @@ Vagrant provides an easier way to deploy multiple virtual machines on VirtualBox
       kubectl version --client
     "
     
-    echo "✅ Installation complete on $instance"
+    echo "Installation complete on $instance"
+    echo "---"
   done
   ```
 
@@ -1767,35 +1768,44 @@ Reference: https://kubernetes.io/docs/tasks/administer-cluster/encrypt-data/#enc
   
   Official etcd release binaries --> [etcd](https://github.com/etcd-io/etcd) GitHub project:
   ```bash
-  [ "$ARCH" = "x86_64" ] && _ARCH="amd64" || [ "$ARCH" = "aarch64" ] && _ARCH="arm64" || _ARCH="$ARCH"
-  
-  ETCD_VERSION="v3.5.9"
-  
-  for instance in controlplane01 controlplane02; do
-      
-    ssh -o StrictHostKeyChecking=no -i ~/.ssh/kubernetes vagrant@${instance} "
-    
-      ETCD_VERSION=${ETCD_VERSION}
-      _ARCH=${_ARCH}
-      DOWNLOAD_URL=https://storage.googleapis.com/etcd
+  {
+    export ARCH="amd64"
+    ETCD_VERSION="v3.5.9"
+    DOWNLOAD_URL="https://storage.googleapis.com/etcd"
 
-      rm -f /tmp/etcd-\${ETCD_VERSION}-linux-\${_ARCH}.tar.gz
-      rm -rf /tmp/etcd-download-test && mkdir -p /tmp/etcd-download-test
+    # Clean up old files
+    rm -f "/tmp/etcd-${ETCD_VERSION}-linux-${ARCH}.tar.gz"
+    rm -rf "/tmp/etcd-download-test" && mkdir -p "/tmp/etcd-download-test"
 
-      curl -L \${DOWNLOAD_URL}/\${ETCD_VERSION}/etcd-\${ETCD_VERSION}-linux-\${_ARCH}.tar.gz -o /tmp/etcd-\${ETCD_VERSION}-linux-\${_ARCH}.tar.gz
+    # Download with correct quoting
+    curl -L "${DOWNLOAD_URL}/${ETCD_VERSION}/etcd-${ETCD_VERSION}-linux-${ARCH}.tar.gz" \
+      -o "/tmp/etcd-${ETCD_VERSION}-linux-${ARCH}.tar.gz"
 
-      # Extract and install the `etcd` server and the `etcdctl` command line utility:
-      tar xzvf /tmp/etcd-\${ETCD_VERSION}-linux-\${_ARCH}.tar.gz -C /tmp/etcd-download-test --strip-components=1 --no-same-owner
+    # Check if download was successful
+    if [ ! -f "/tmp/etcd-${ETCD_VERSION}-linux-${ARCH}.tar.gz" ]; then
+      echo "Download failed!"
+      exit 1
+    fi
 
-      rm -f /tmp/etcd-\${ETCD_VERSION}-linux-\${_ARCH}.tar.gz
-    
-      sudo mv /tmp/etcd-download-test/etcd* /usr/local/bin/
+    # Extract
+    tar xzvf "/tmp/etcd-${ETCD_VERSION}-linux-${ARCH}.tar.gz" \
+      -C "/tmp/etcd-download-test" \
+      --strip-components=1 \
+      --no-same-owner
 
-      etcd --version
-      etcdctl version
-      etcdutl version
-    "
-  done
+    # Clean up tar file
+    rm -f "/tmp/etcd-${ETCD_VERSION}-linux-${ARCH}.tar.gz"
+
+    # Install binaries
+    sudo mv /tmp/etcd-download-test/etcd* /usr/local/bin/
+
+    # Verify architecture and installation
+    echo "=== Installation Verification ==="
+    file /usr/local/bin/etcd
+    etcd --version
+    etcdctl version
+    etcdutl version
+  }
   ```
 * Configure the etcd Server
   * Copy and secure certificates. 
@@ -1977,6 +1987,21 @@ Reference: https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade
     sudo systemctl status haproxy.service
   }
   ```
+  ```bash
+  # Allow port 6443 (Kubernetes API Server)
+  sudo ufw allow 6443/tcp comment 'HAProxy Kubernetes API'
+
+  # Allow port 8404 (HAProxy stats/metrics)
+  sudo ufw allow 8404/tcp comment 'HAProxy Stats'
+
+  # Alternative: Allow from specific IP range (more secure)
+  # sudo ufw allow from 192.168.1.0/24 to any port 6443 proto tcp comment 'Kubernetes API from internal network'
+  # sudo ufw allow from 192.168.1.0/24 to any port 8404 proto tcp comment 'HAProxy Stats from internal network'
+
+  # Show the updated rules
+  sudo ufw status numbered
+  ss -tunlp | grep -i -E '6443|8404'
+  ```
 
 
 
@@ -2089,11 +2114,13 @@ Reference: https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade
 
 * **Configure the Kubernetes Controller Manager**
 
-  Move the `kube-controller-manager` kubeconfig into place:
+  Check `kube-controller-manager` kubeconfig are in place:
 
   ```bash
-  sudo mv kube-controller-manager.kubeconfig /var/lib/kubernetes/
+  ll /var/lib/kubernetes/kube-controller-manager.kubeconfig          
+  #-rw------- 1 root root 512 Mar  6 02:11 /var/lib/kubernetes/kube-controller-manager.kubeconfig
   ```
+
   Create the `kube-controller-manager.service` systemd unit file:
 
   ```bash
@@ -2136,7 +2163,8 @@ Reference: https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade
   Move the `kube-scheduler` kubeconfig into place:
 
   ```bash
-  sudo mv kube-scheduler.kubeconfig /var/lib/kubernetes/
+  sudo ll /var/lib/kubernetes/kube-scheduler.kubeconfig
+  #-rw------- 1 root root 476 Mar  6 02:11 /var/lib/kubernetes/kube-scheduler.kubeconfig
   ```
 
   Create the `kube-scheduler.service` systemd unit file:
@@ -2199,8 +2227,7 @@ Reference: https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade
 
   Make a HTTP request for the Kubernetes version info:
   ```bash
-  curl -k https://${LOADBALANCER_IP
-  }:6443/version
+  curl -k https://${LOADBALANCER_IP}:6443/version
   ## The Kubernetes Frontend Load Balancer
   ```
 
@@ -2506,7 +2533,8 @@ Reference: https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade
 * Configure the Kubernetes Proxy(On `node01`)
 
   ```bash
-  sudo mv kube-proxy.kubeconfig /var/lib/kube-proxy/
+  ll /var/lib/kube-proxy/kube-proxy.kubeconfig
+  #-rw------- 1 root root 464 Mar  6 02:11 /var/lib/kube-proxy/kube-proxy.kubeconfig
   ```
 
 * Create the `kube-proxy-config.yaml` configuration file:
@@ -2877,6 +2905,7 @@ Here, we don't have the certificates yet. So we cannot create a kubeconfig file.
   ```
 * Reference: https://kubernetes.io/docs/reference/access-authn-authz/kubelet-tls-bootstrapping/#kubelet-configuration
 
+
 **Step 7 Create Kubelet Config File**
 
 * Create the `kubelet-config.yaml` configuration file:
@@ -2908,6 +2937,7 @@ Here, we don't have the certificates yet. So we cannot create a kubeconfig file.
   EOF
   ```
   > Note: We are not specifying the certificate details - tlsCertFile and tlsPrivateKeyFile - in this file
+
 
 **Step 8 Configure Kubelet Service**
   
