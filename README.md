@@ -54,6 +54,22 @@ This cluster uses:
 - [etcd](https://github.com/coreos/etcd) v3.5.9 — Cluster state store
 - [CoreDNS](https://github.com/coredns/coredns) v1.9.4 — DNS for the cluster
 - [HAProxy](https://www.haproxy.org/) — Load balancer for API servers
+- Pod CIRD:- `10.244.0.0/16`
+- Service CIRD:- `10.96.0.0/16`
+- Virtual Machine CIDR:- `192.168.56.0/24`
+
+---
+
+### Vagrant Environment
+
+| VM | VM Name | Purpose | IP | Forwarded Port | RAM |
+|-----------|--------------------------|:---------:|-------------:|-----------------:|------:|
+| controlplane01 | kubernetes-ha-controlplane-1 | Master | 192.168.56.41 |  | 2048 |
+| controlplane02 | kubernetes-ha-controlplane-2 | Master | 192.168.56.42 |  | 2048 |
+| node01 | kubernetes-ha-node-1 | Worker | 192.168.56.51 |  | 1024 |
+| node02 | kubernetes-ha-node-2 | Worker | 192.168.56.52 |  | 1024 |
+| loadbalancer | kubernetes-ha-lb | LoadBalancer | 192.168.56.60 |  | 512 |
+| jumphost | kubernetes-ha-jumphost | Jumphost | 192.168.56.71 | 2710 | 2048 |
 
 ---
 

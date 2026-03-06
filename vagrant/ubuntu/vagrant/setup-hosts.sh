@@ -32,10 +32,10 @@ sed -e "/^.*$2.*/d" -i /etc/hosts
 
 # Update /etc/hosts about other hosts
 cat >> /etc/hosts <<EOF
-${NETWORK}.41  controlplane01
-${NETWORK}.42  controlplane02
-${NETWORK}.51  node01
-${NETWORK}.52  node02
-${NETWORK}.60  loadbalancer
-${NETWORK}.71  jumphost
+${NETWORK}.41  masterone.example.com masterone
+${NETWORK}.42  mastertwo.example.com mastertwo
+${NETWORK}.51  workerone.example.com workerone
+${NETWORK}.52  workertwo.example.com workertwo
+${NETWORK}.60  lbone.example.com lbone
+${NETWORK}.71  jumphost.example.com jumphost
 EOF
