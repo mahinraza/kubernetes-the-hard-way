@@ -1,0 +1,19 @@
+---
+- name: Generate kubelet kubeconfig
+  template:
+    src: kubeconfig.j2
+    dest: "{{ dirs.kubernetes_pki }}/{{ hostvars[worker_node].short_name }}.kubeconfig"
+    owner: root
+    group: root
+    mode: '0600'
+  become: true
+  vars:
+    kc:
+      embed_certs: false
+      use_localhost: false
+      user: "system:node:{{ hostvars[worker_node].short_name }}"
+      dest: "{{ dirs.kubernetes_pki }}/{{ hostvars[worker_node].short_name }}.kubeconfig"
+      ca_path: "{{ dirs.kubernetes_pki }}/{{ ca.kubernetes.name }}.crt"
+      cert_path: "{{ dirs.kubernetes_pki }}/{{ hostvars[worker_node].short_name }}.crt"
+      key_path: "{{ dirs.kubernetes_pki }}/{{ hostvars[worker_node].short_name }}.key"
+  delegate_to: "{{ worker_node }}"
