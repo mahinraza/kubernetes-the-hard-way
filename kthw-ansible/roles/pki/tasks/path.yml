@@ -1,0 +1,8 @@
+- name: Ensure PKI directory {{ pki_dir }} exists
+  file:
+    path: "{{ pki_dir }}"
+    state: directory
+    mode: '0700'
+    owner: vagrant
+    group: vagrant
+

@@ -1,0 +1,18 @@
+---
+- import_tasks: path.yml
+- include_tasks: ca.yml
+  loop: "{{ ca | dict2items }}"
+- include_tasks: clients.yml
+  loop: "{{ certificates.clients | dict2items }}"
+- include_tasks: servers.yml
+  loop: "{{ certificates.servers | dict2items }}"
+
+
+# - name: Generate etcd certs centrally
+#   include_tasks: etcd.yaml
+#   loop: "{{ groups['etcd'] }}"
+#   loop_control:
+#     loop_var: etcd_node
+
+# - name: Generate apiserver etcd client cert
+#   import_tasks: kubernetes.yaml
