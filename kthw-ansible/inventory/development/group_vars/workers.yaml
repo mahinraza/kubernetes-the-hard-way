@@ -1,0 +1,4 @@
+kubectl:
+  install: true
+  version: v1.35.2
+  

@@ -1,0 +1,203 @@
+service_cidr: "10.96.0.0/24"
+api_service: "{{ service_cidr.split('/')[0].split('.')[:3] | join('.') }}.{{ service_cidr.split('.')[3].split('/')[0] | int + 1 }}"
+pki_dir: ~/kubernetes-the-hard-way/pki
+
+masterone_ip: "{{ hostvars['masterone.example.com']['ansible_host'] }}"
+mastertwo_ip: "{{ hostvars['mastertwo.example.com']['ansible_host'] }}"
+workerone_ip: "{{ hostvars['workerone.example.com']['ansible_host'] }}"
+workertwo_ip: "{{ hostvars['workertwo.example.com']['ansible_host'] }}"
+lbone_ip: "{{ hostvars['lbone.example.com']['ansible_host'] }}"
+
+ca_name_mapping:
+  kubernetes: "ca"
+  etcd: "etcd-ca"
+  default: "ca"
+
+default_ca: &default_ca
+  country: "IN"
+  state: "Rajasthan"
+  locality: "Jaipur"
+  key_size: 4096
+  expiry: "3650"
+  key_type: RSA
+  key_usage:
+    - digitalSignature
+    - keyCertSign
+    - cRLSign
+
+ca:
+  kubernetes:
+    <<: *default_ca
+    name: ca
+    common_name: "kubernetes"
+    organization: "kubernetes"
+    organizational_unit: "kubernetes-ca"
+
+  etcd:
+    <<: *default_ca
+    name: etcd-ca
+    common_name: "etcd"
+    organization: "etcd"
+    organizational_unit: "etcd-ca"
+
+default_cert: &default_cert
+  country: "IN"
+  locality: "Jaipur"
+  state: "Rajasthan"
+  key_size: 4096
+  key_type: RSA
+  key_usage:
+    - digitalSignature
+    - keyEncipherment
+    - nonRepudiation
+  expiry: "365"
+
+default_client: &default_client
+  <<: *default_cert
+  extended_key_usage:
+    - clientAuth
+
+default_server: &default_server
+  <<: *default_cert
+  extended_key_usage:
+    - serverAuth
+
+certificates:
+  clients:
+    apiserver-etcd-client:
+      <<: *default_client
+      name: "apiserver-etcd-client"
+      common_name: "kube-apiserver-etcd-client"
+      organization: "system:masters"
+      ca: "etcd"
+      description: "Certificate for kube-apiserver to authenticate to etcd. Signed by Etcd CA."
+
+    apiserver-kubelet-client:
+      <<: *default_client
+      name: "apiserver-kubelet-client"
+      common_name: "kube-apiserver-kubelet-client"
+      organization: "system:masters"
+      ca: "kubernetes"
+      description: "Certificate for kube-apiserver to authenticate to kubelet. Signed by Kubernetes CA."
+
+    kube-proxy-client:
+      <<: *default_client
+      name: "kube-proxy"
+      common_name: "system:kube-proxy"
+      organization: "system:node-proxier"
+      ca: "kubernetes"
+      description: "Certificate for kube-proxy to authenticate to API server. Signed by Kubernetes CA."
+
+    scheduler-client:
+      <<: *default_client
+      name: "kube-scheduler"
+      common_name: "system:kube-scheduler"
+      organization: "system:kube-scheduler"
+      ca: "kubernetes"
+      description: "Certificate for kube-scheduler to authenticate to API server. Signed by Kubernetes CA."
+
+    controller-manager-client:
+      <<: *default_client
+      name: "kube-controller-manager"
+      common_name: "system:kube-controller-manager"
+      organization: "system:kube-controller-manager"
+      ca: "kubernetes"
+      description: "Certificate for kube-controller-manager to authenticate to API server. Signed by Kubernetes CA."
+
+    admin:
+      <<: *default_client
+      name: "admin"
+      common_name: "kubernetes-admin"
+      organization: "system:masters"
+      ca: "kubernetes"
+      description: "Certificate for admin user to authenticate to API server. Signed by Kubernetes CA."
+
+    service_account:
+      <<: *default_client
+      name: "service-account"
+      common_name: "service-accounts"
+      organization: "kubernetes"
+      ca: "kubernetes"
+      description: "service-account key-pair to sign and verify the service account token."
+
+  servers:
+    kube-apiserver:
+      <<: *default_server
+      name: "kube-apiserver"
+      common_name: "kube-apiserver"
+      organization: "kubernetes"
+      organizational_unit: "kube-apiserver"
+      ca: "kubernetes"
+      alt_names:
+        - "DNS:kubernetes.default.svc.cluster.local"
+        - "DNS:kubernetes.default.svc"
+        - "DNS:kubernetes.default"
+        - "DNS:kubernetes"
+        - "IP:{{ masterone_ip }}"
+        - "IP:{{ mastertwo_ip }}"
+        - "IP:{{ api_service }}"
+        - "IP:{{ lbone_ip }}"
+        - "IP:127.0.0.1"
+        - "DNS:localhost"
+      description: "Certificate for kube-apiserver to serve HTTPS. Signed by Kubernetes CA."
+
+    kubelet_workerone:
+      <<: *default_server
+      name: "kubelet-workerone"
+      common_name: "system:node:workerone"
+      organization: "system:nodes"
+      organizational_unit: "kubelet"
+      ca: "kubernetes"
+      alt_names:
+        - "DNS:workerone"
+        - "DNS:workerone.example.com"
+        - "IP:{{ workerone_ip }}"
+        - "IP:127.0.0.1"
+        - "DNS:localhost"
+      description: "Certificate for kubelet on workerone to serve HTTPS. Signed by Kubernetes CA."
+
+    kubelet_workertwo:
+      <<: *default_server
+      name: "kubelet-workertwo"
+      common_name: "system:node:workertwo"
+      organization: "system:nodes"
+      organizational_unit: "kubelet"
+      ca: "kubernetes"
+      alt_names:
+        - "DNS:workertwo"
+        - "DNS:workertwo.example.com"
+        - "IP:{{ workertwo_ip }}"
+        - "IP:127.0.0.1"
+        - "DNS:localhost"
+      description: "Certificate for kubelet on workertwo to serve HTTPS. Signed by Kubernetes CA."
+
+    etcd:
+      <<: *default_server
+      name: "etcd-server"
+      common_name: "etcd-server"
+      organization: "etcd"
+      organizational_unit: "etcd-server"
+      ca: "etcd"
+      alt_names:
+        - "IP:{{ masterone_ip }}"
+        - "IP:{{ mastertwo_ip }}"
+        - "IP:127.0.0.1"
+        - "DNS:localhost"
+      description: "Certificate for etcd server to serve HTTPS. Signed by Etcd CA."
+
+    etcd_peer:
+      <<: *default_server
+      name: "etcd-peer"
+      common_name: "etcd-peer"
+      organization: "etcd"
+      organizational_unit: "etcd-peer"
+      ca: "etcd"
+      extended_key_usage:
+        - serverAuth
+        - clientAuth
+      alt_names:
+        - "IP:{{ masterone_ip }}"
+        - "IP:{{ mastertwo_ip }}"
+        - "IP:127.0.0.1"
+        - "DNS:localhost"
+      description: "Certificate for etcd peer-to-peer communication. Signed by Etcd CA."
