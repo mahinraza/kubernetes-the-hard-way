@@ -125,3 +125,8 @@ ansible-playbook playbooks/site.yml --tags loadbalancer
 ansible-playbook playbooks/site.yml --tags masters
 ansible-playbook playbooks/site.yml --tags workers
 ```
+
+### Reference:-
+- https://github.com/mmumshad/kubernetes-the-hard-way.git
+- https://github.com/kelseyhightower/kubernetes-the-hard-way.git
+- https://kubernetes.io/docs/tasks/administer-cluster/certificates/
