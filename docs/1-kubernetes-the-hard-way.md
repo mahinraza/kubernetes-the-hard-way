@@ -2518,10 +2518,16 @@ Reference: https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade
 
   [Service]
   ExecStart=/usr/local/bin/kubelet \\
-    --config=/var/lib/kubelet/kubelet-config.yaml \\
-    --kubeconfig=/var/lib/kubelet/kubelet.kubeconfig \\
-    --node-ip=${PRIMARY_IP} \\
-    --v=2
+  --config=/var/lib/kubelet/kubelet-config.yaml \\
+  --kubeconfig=/var/lib/kubelet/kubelet.kubeconfig \\        # ← keep this
+  --bootstrap-kubeconfig=/var/lib/kubelet/bootstrap-kubeconfig \\  # ← first-time auth
+  --node-ip=${PRIMARY_IP} \\
+  --image-pull-progress-deadline=2m \\
+  --rotate-certificates=true \\
+  --rotate-server-certificates=true \\
+  --network-plugin=cni \\
+  --register-node=true \\
+  --v=2
   Restart=on-failure
   RestartSec=5
 
