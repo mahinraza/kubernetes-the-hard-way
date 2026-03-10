@@ -2523,8 +2523,8 @@ Reference: https://kubernetes.io/docs/tasks/administer-cluster/configure-upgrade
   --bootstrap-kubeconfig=/var/lib/kubelet/bootstrap-kubeconfig \\  # ← first-time auth
   --node-ip=${PRIMARY_IP} \\
   --image-pull-progress-deadline=2m \\
-  --rotate-certificates=true \\
-  --rotate-server-certificates=true \\
+  --rotate-certificates=true \\ #Client certificates Auto approve
+  --rotate-server-certificates=true \\ #Server certificate need to be approved manually
   --network-plugin=cni \\
   --register-node=true \\
   --v=2
