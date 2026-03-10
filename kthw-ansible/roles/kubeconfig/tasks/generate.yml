@@ -1,31 +1,14 @@
 ---
-- name: Slurp CA cert
-  slurp:
-    src: "{{ kc.ca_path }}"
-  register: slurped_ca
-  when: kc.embed_certs
-  delegate_to: "{{ node }}"
-
-- name: Slurp client cert
-  slurp:
-    src: "{{ kc.cert_path }}"
-  register: slurped_cert
-  when: kc.embed_certs
-  delegate_to: "{{ node }}"
-
-- name: Slurp client key
-  slurp:
-    src: "{{ kc.key_path }}"
-  register: slurped_key
-  when: kc.embed_certs
-  delegate_to: "{{ node }}"
-
-- name: Generate kubeconfig
-  template:
+# Runs on localhost once — generates all component kubeconfigs into pki_local_dir
+- name: Generate component kubeconfigs on localhost
+  ansible.builtin.template:
     src: kubeconfig.j2
-    dest: "{{ kc.dest }}"
-    owner: root
-    group: root
-    mode: '0600'
-  become: true
-  delegate_to: "{{ node }}"
+    dest: "{{ kubeconfig_local_dir }}/{{ item.value.kubeconfig }}"
+    mode: "0600"
+  loop: "{{ kubeconfigs | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  vars:
+    kc: "{{ item.value }}"
+  delegate_to: localhost
+  run_once: true

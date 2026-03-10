@@ -1,23 +1,15 @@
 ---
-- name: Generate kubeconfigs on remote nodes
-  include_tasks: generate.yml
-  loop: "{{ kubeconfigs | dict2items | subelements('value.hosts') }}"
-  loop_control:
-    loop_var: kc_node_item
-    label: "{{ kc_node_item[0].key }} → {{ hostvars[kc_node_item[1]].short_name }}"
-  vars:
-    kc: "{{ kc_node_item[0].value }}"
-    node: "{{ kc_node_item[1] }}"
-  tags:
-    - kubeconfig
-    - kubeconfig_generate
+- ansible.builtin.import_tasks: path.yml
+  tags: [kubeconfig, path_generate]
 
-- name: Generate kubelet kubeconfigs per worker
-  include_tasks: kubelet.yml
-  loop: "{{ groups['workers'] }}"
-  loop_control:
-    loop_var: worker_node
-    label: "{{ hostvars[worker_node].short_name }}"
-  tags:
-    - kubeconfig
-    - kubeconfig_kubelet
+- name: Generate component kubeconfigs
+  ansible.builtin.import_tasks: generate.yml
+  tags: [kubeconfig, kubeconfig_generate]
+
+- name: Generate kubelet kubeconfigs
+  ansible.builtin.import_tasks: kubelet.yml
+  tags: [kubeconfig, kubeconfig_kubelet]
+
+- name: Distribute kubeconfigs
+  ansible.builtin.import_tasks: distribute.yml
+  tags: [kubeconfig, kubeconfig_distribute]

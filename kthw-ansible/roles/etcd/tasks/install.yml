@@ -1,0 +1,74 @@
+---
+- name: Set etcd architecture fact
+  ansible.builtin.set_fact:
+    etcd_arch: "{{ 'amd64' if ansible_architecture == 'x86_64' else 'arm64' }}"
+
+- name: Set etcd tarball name fact
+  ansible.builtin.set_fact:
+    etcd_tarball: "etcd-{{ etcd_version }}-linux-{{ etcd_arch }}.tar.gz"
+
+- name: Check if etcd is already installed at correct version
+  ansible.builtin.command: etcd --version
+  register: etcd_installed_version
+  changed_when: false
+  failed_when: false
+
+# was:  etcd_version not in (etcd_installed_version.stdout | default(''))
+# fix:
+- name: Set install required fact
+  ansible.builtin.set_fact:
+    etcd_install_required: >-
+      {{ etcd_version | regex_replace('^v', '') not in (etcd_installed_version.stdout | default('')) }}
+
+- name: Download etcd tarball
+  ansible.builtin.get_url:
+    url: "{{ etcd_download_url }}/{{ etcd_version }}/{{ etcd_tarball }}"
+    dest: "/tmp/{{ etcd_tarball }}"
+    mode: "0644"
+  when: etcd_install_required
+
+- name: Create etcd extraction directory
+  ansible.builtin.file:
+    path: /tmp/etcd-download
+    state: directory
+    mode: "0755"
+  when: etcd_install_required
+
+- name: Extract etcd tarball
+  ansible.builtin.unarchive:
+    src: "/tmp/{{ etcd_tarball }}"
+    dest: /tmp/etcd-download
+    remote_src: true
+    extra_opts:
+      - "--strip-components=1"
+      - "--no-same-owner"
+  when: etcd_install_required
+
+- name: Install etcd binaries to /usr/local/bin
+  ansible.builtin.copy:
+    src: "/tmp/etcd-download/{{ item }}"
+    dest: "/usr/local/bin/{{ item }}"
+    mode: "0755"
+    owner: root
+    group: root
+    remote_src: true
+  become: true
+  loop:
+    - etcd
+    - etcdctl
+    - etcdutl
+  when: etcd_install_required
+
+- name: Clean up etcd download artifacts
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - "/tmp/{{ etcd_tarball }}"
+    - /tmp/etcd-download
+
+- name: Verify etcd installation
+  ansible.builtin.command: etcd --version
+  register: etcd_verify
+  changed_when: false
+  failed_when: etcd_version | regex_replace('^v', '') not in etcd_verify.stdout

@@ -1,14 +1,14 @@
 ---
 - name: Generating {{ item.value.name }}.key...
   community.crypto.openssl_privatekey:
-    path: "{{ pki_dir }}/{{ item.value.name }}.key"
+    path: "{{ pki_local_dir }}/{{ item.value.name }}.key"
     size: "{{ item.value.key_size }}"
     type: "{{ item.value.key_type }}"
     mode: '0600'
 
 - name: Generate csr for {{ item.value.organizational_unit }}...
   community.crypto.openssl_csr_pipe:
-    privatekey_path: "{{ pki_dir }}/{{ item.value.name }}.key"
+    privatekey_path: "{{ pki_local_dir }}/{{ item.value.name }}.key"
     common_name: "{{ item.value.common_name }}"
     country_name: "{{ item.value.country }}"
     state_or_province_name: "{{ item.value.state }}"
@@ -24,9 +24,9 @@
 
 - name: Generate self-signed {{ item.value.name }}.crt...
   community.crypto.x509_certificate:
-    path: "{{ pki_dir }}/{{ item.value.name }}.crt"
+    path: "{{ pki_local_dir }}/{{ item.value.name }}.crt"
     csr_content: "{{ ca_csr.csr }}"
-    privatekey_path: "{{ pki_dir }}/{{ item.value.name }}.key"
+    privatekey_path: "{{ pki_local_dir }}/{{ item.value.name }}.key"
     provider: selfsigned
     selfsigned_not_after: "+{{ item.value.expiry }}d"
     selfsigned_not_before: "-1d"

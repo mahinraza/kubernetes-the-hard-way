@@ -1,0 +1,18 @@
+---
+- name: Deploy kube-proxy config file
+  ansible.builtin.template:
+    src: kube-proxy-config.yaml.j2
+    dest: "{{ dirs.kubeproxy }}/kube-proxy-config.yaml"
+    owner: root
+    group: root
+    mode: "0600"
+  notify: Restart kube-proxy
+
+- name: Deploy kube-proxy systemd unit file
+  ansible.builtin.template:
+    src: kube-proxy.service.j2
+    dest: /etc/systemd/system/kube-proxy.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart kube-proxy

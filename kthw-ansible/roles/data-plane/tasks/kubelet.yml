@@ -1,0 +1,23 @@
+---
+- name: Compute cluster DNS address from service CIDR
+  ansible.builtin.set_fact:
+    cluster_dns: >-
+      {{ service_cidr | regex_replace('^(\d+\.\d+\.\d+)\.\d+/\d+$', '\1.10') }}
+
+- name: Deploy kubelet config file
+  ansible.builtin.template:
+    src: kubelet-config.yaml.j2
+    dest: "{{ dirs.kubelet }}/kubelet-config.yaml"
+    owner: root
+    group: root
+    mode: "0600"
+  notify: Restart kubelet
+
+- name: Deploy kubelet systemd unit file
+  ansible.builtin.template:
+    src: kubelet.service.j2
+    dest: /etc/systemd/system/kubelet.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart kubelet

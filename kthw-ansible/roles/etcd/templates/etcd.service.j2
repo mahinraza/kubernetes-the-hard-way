@@ -1,0 +1,31 @@
+[Unit]
+Description=etcd distributed key-value store
+Documentation=https://etcd.io/docs/
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+ExecStart=/usr/local/bin/etcd \
+  --name {{ inventory_hostname.split('.')[0] }} \
+  --data-dir={{ dirs.etcd_data }} \
+  --cert-file={{ dirs.etcd_pki }}/{{ certificates.servers.etcd.name }}.crt \
+  --key-file={{ dirs.etcd_pki }}/{{ certificates.servers.etcd.name }}.key \
+  --peer-cert-file={{ dirs.etcd_pki }}/{{ certificates.servers.etcd_peer.name }}.crt \
+  --peer-key-file={{ dirs.etcd_pki }}/{{ certificates.servers.etcd_peer.name }}.key \
+  --trusted-ca-file={{ dirs.etcd_pki }}/{{ ca.etcd.name }}.crt \
+  --peer-trusted-ca-file={{ dirs.etcd_pki }}/{{ ca.etcd.name }}.crt \
+  --peer-client-cert-auth \
+  --client-cert-auth \
+  --initial-advertise-peer-urls https://{{ ansible_host }}:2380 \
+  --listen-peer-urls https://{{ ansible_host }}:2380 \
+  --listen-client-urls https://{{ ansible_host }}:2379,https://127.0.0.1:2379 \
+  --advertise-client-urls https://{{ ansible_host }}:2379 \
+  --initial-cluster-token {{ etcd_cluster_token }} \
+  --initial-cluster {% for host in groups['masters'] %}{{ host.split('.')[0] }}=https://{{ hostvars[host].ansible_host }}:2380{% if not loop.last %},{% endif %}{% endfor %} \
+  --initial-cluster-state {{ etcd_initial_cluster_state | default('new') }}
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

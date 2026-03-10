@@ -1,6 +1,61 @@
-service_cidr: "10.96.0.0/24"
+service_cidr: "10.96.0.0/16"
+pod_cidr: "10.244.0.0/16"
 api_service: "{{ service_cidr.split('/')[0].split('.')[:3] | join('.') }}.{{ service_cidr.split('.')[3].split('/')[0] | int + 1 }}"
-pki_dir: ~/kubernetes-the-hard-way/pki
+service_node_port_range: "30000-32767"
+
+cluster_name: 
+
+dirs:
+  artifacts: "{{ lookup('env', 'HOME') }}/kubernetes-the-hard-way/artifacts"
+  etcd_pki:       /etc/kubernetes/pki/etcd
+  etcd:           /etc/etcd
+  etcd_data:      /var/lib/etcd
+  kubernetes_pki: /etc/kubernetes/pki
+  kubernetes:     /etc/kubernetes
+  kubernetes_bin: /usr/local/bin
+  kubeproxy:      /var/lib/kube-proxy
+  kubelet:        /var/lib/kubelet
+
+pki_local_dir:        "{{ dirs.artifacts }}/pki"
+kubeconfig_local_dir: "{{ dirs.artifacts }}/kubeconfig"
+
+etcd_version: "v3.5.21"
+etcd_cluster_token: etcd-cluster
+etcd_verify_output_dir: "{{ dirs.artifacts }}/logs/etcd"
+etcd_initial_cluster_state: "new"
+etcd_arch: "{{ 'amd64' if ansible_architecture == 'x86_64' else 'arm64' }}"
+etcd_download_url: "https://storage.googleapis.com/etcd"
+
+haproxy:
+  frontend_port: 6443
+  stats_port: 8404
+  stats_uri: "/"
+  stats_refresh: "10s"
+  balance: roundrobin
+  fall: 3
+  rise: 2
+  backend_group: masters
+  backend_port: 6443
+
+
+
+apiserver_count: 2
+audit_log_maxage: 30
+audit_log_maxbackup: 3
+audit_log_maxsize: 100
+masters_group: masters
+loadbalancer_group: loadbalancer
+
+controlplane_kubeconfigs:
+  - kube-controller-manager.kubeconfig
+  - kube-scheduler.kubeconfig
+  - admin.kubeconfig
+
+kube_proxy_mode: iptables
+kubelet_cluster_domain: cluster.local
+
+kubelet_runtime_request_timeout: "15m"
+kubelet_resolv_conf: /run/systemd/resolve/resolv.conf
 
 masterone_ip: "{{ hostvars['masterone.example.com']['ansible_host'] }}"
 mastertwo_ip: "{{ hostvars['mastertwo.example.com']['ansible_host'] }}"
@@ -64,7 +119,7 @@ default_server: &default_server
 
 certificates:
   clients:
-    apiserver-etcd-client:
+    apiserver_etcd_client:
       <<: *default_client
       name: "apiserver-etcd-client"
       common_name: "kube-apiserver-etcd-client"
@@ -72,7 +127,7 @@ certificates:
       ca: "etcd"
       description: "Certificate for kube-apiserver to authenticate to etcd. Signed by Etcd CA."
 
-    apiserver-kubelet-client:
+    apiserver_kubelet_client:
       <<: *default_client
       name: "apiserver-kubelet-client"
       common_name: "kube-apiserver-kubelet-client"
@@ -80,7 +135,7 @@ certificates:
       ca: "kubernetes"
       description: "Certificate for kube-apiserver to authenticate to kubelet. Signed by Kubernetes CA."
 
-    kube-proxy-client:
+    kube_proxy_client:
       <<: *default_client
       name: "kube-proxy"
       common_name: "system:kube-proxy"
@@ -88,7 +143,7 @@ certificates:
       ca: "kubernetes"
       description: "Certificate for kube-proxy to authenticate to API server. Signed by Kubernetes CA."
 
-    scheduler-client:
+    scheduler_client:
       <<: *default_client
       name: "kube-scheduler"
       common_name: "system:kube-scheduler"
@@ -96,7 +151,7 @@ certificates:
       ca: "kubernetes"
       description: "Certificate for kube-scheduler to authenticate to API server. Signed by Kubernetes CA."
 
-    controller-manager-client:
+    controller_manager_client:
       <<: *default_client
       name: "kube-controller-manager"
       common_name: "system:kube-controller-manager"
@@ -121,7 +176,7 @@ certificates:
       description: "service-account key-pair to sign and verify the service account token."
 
   servers:
-    kube-apiserver:
+    kube_apiserver:
       <<: *default_server
       name: "kube-apiserver"
       common_name: "kube-apiserver"
@@ -143,10 +198,13 @@ certificates:
 
     kubelet_workerone:
       <<: *default_server
-      name: "kubelet-workerone"
+      name: "workerone"
       common_name: "system:node:workerone"
       organization: "system:nodes"
       organizational_unit: "kubelet"
+      extended_key_usage:
+        - serverAuth
+        - clientAuth
       ca: "kubernetes"
       alt_names:
         - "DNS:workerone"
@@ -158,10 +216,19 @@ certificates:
 
     kubelet_workertwo:
       <<: *default_server
-      name: "kubelet-workertwo"
+      name: "workertwo"
       common_name: "system:node:workertwo"
       organization: "system:nodes"
       organizational_unit: "kubelet"
+      kubeconfig: true
+      config:
+        pki_path: "{{ dirs.kubernetes_pki }}"
+        kubeconfig_embed_certs: true       # true = base64 embed | false = file paths
+        kubeconfig_use_localhost: false    # true = 127.0.0.1   | false = loadbalancer IP
+        kube_user: "system:node:workerone"
+      extended_key_usage:
+        - serverAuth
+        - clientAuth
       ca: "kubernetes"
       alt_names:
         - "DNS:workertwo"
@@ -201,3 +268,102 @@ certificates:
         - "IP:127.0.0.1"
         - "DNS:localhost"
       description: "Certificate for etcd peer-to-peer communication. Signed by Etcd CA."
+
+dirs_all:
+  - "{{ dirs.kubernetes }}"
+  - "{{ dirs.kubernetes_pki }}"
+
+dirs_masters:
+  - "{{ dirs.etcd }}"
+  - "{{ dirs.etcd_pki }}"
+  - "{{ dirs.etcd_data }}"
+
+dirs_workers:
+  - "{{ dirs.kubeproxy }}"
+  - "{{ dirs.kubelet }}"
+
+pki_distribute_all:
+  - { src: "{{ ca.kubernetes.name }}.crt", dest: "{{ dirs.kubernetes_pki }}/{{ ca.kubernetes.name }}.crt", mode: "0644" }
+
+pki_distribute_masters:
+  - { src: "{{ certificates.clients.admin.name }}.crt",                       dest: "{{ dirs.kubernetes_pki }}/{{ certificates.clients.admin.name }}.crt",                       mode: "0644" }
+  - { src: "{{ certificates.clients.admin.name }}.key",                       dest: "{{ dirs.kubernetes_pki }}/{{ certificates.clients.admin.name }}.key",                       mode: "0600" }
+  - { src: "{{ certificates.servers.kube_apiserver.name }}.crt",              dest: "{{ dirs.kubernetes_pki }}/{{ certificates.servers.kube_apiserver.name }}.crt",              mode: "0644" }
+  - { src: "{{ certificates.servers.kube_apiserver.name }}.key",              dest: "{{ dirs.kubernetes_pki }}/{{ certificates.servers.kube_apiserver.name }}.key",              mode: "0600" }
+  - { src: "{{ certificates.clients.apiserver_kubelet_client.name }}.crt",    dest: "{{ dirs.kubernetes_pki }}/{{ certificates.clients.apiserver_kubelet_client.name }}.crt",    mode: "0644" }
+  - { src: "{{ certificates.clients.apiserver_kubelet_client.name }}.key",    dest: "{{ dirs.kubernetes_pki }}/{{ certificates.clients.apiserver_kubelet_client.name }}.key",    mode: "0600" }
+  - { src: "{{ certificates.clients.apiserver_etcd_client.name }}.crt",       dest: "{{ dirs.kubernetes_pki }}/{{ certificates.clients.apiserver_etcd_client.name }}.crt",       mode: "0644" }
+  - { src: "{{ certificates.clients.apiserver_etcd_client.name }}.key",       dest: "{{ dirs.kubernetes_pki }}/{{ certificates.clients.apiserver_etcd_client.name }}.key",       mode: "0600" }
+  - { src: "{{ certificates.clients.service_account.name }}.crt",             dest: "{{ dirs.kubernetes_pki }}/{{ certificates.clients.service_account.name }}.crt",             mode: "0644" }
+  - { src: "{{ certificates.clients.service_account.name }}.key",             dest: "{{ dirs.kubernetes_pki }}/{{ certificates.clients.service_account.name }}.key",             mode: "0600" }
+  - { src: "{{ certificates.clients.controller_manager_client.name }}.crt",   dest: "{{ dirs.kubernetes_pki }}/{{ certificates.clients.controller_manager_client.name }}.crt",   mode: "0644" }
+  - { src: "{{ certificates.clients.controller_manager_client.name }}.key",   dest: "{{ dirs.kubernetes_pki }}/{{ certificates.clients.controller_manager_client.name }}.key",   mode: "0600" }
+  - { src: "{{ certificates.clients.scheduler_client.name }}.crt",            dest: "{{ dirs.kubernetes_pki }}/{{ certificates.clients.scheduler_client.name }}.crt",            mode: "0644" }
+  - { src: "{{ certificates.clients.scheduler_client.name }}.key",            dest: "{{ dirs.kubernetes_pki }}/{{ certificates.clients.scheduler_client.name }}.key",            mode: "0600" }
+  # etcd
+  - { src: "{{ ca.etcd.name }}.crt",                                          dest: "{{ dirs.etcd_pki }}/{{ ca.etcd.name }}.crt",                                                mode: "0644" }
+  - { src: "{{ certificates.servers.etcd.name }}.crt",                        dest: "{{ dirs.etcd_pki }}/{{ certificates.servers.etcd.name }}.crt",                              mode: "0644" }
+  - { src: "{{ certificates.servers.etcd.name }}.key",                        dest: "{{ dirs.etcd_pki }}/{{ certificates.servers.etcd.name }}.key",                              mode: "0600" }
+  - { src: "{{ certificates.servers.etcd_peer.name }}.crt",                   dest: "{{ dirs.etcd_pki }}/{{ certificates.servers.etcd_peer.name }}.crt",                         mode: "0644" }
+  - { src: "{{ certificates.servers.etcd_peer.name }}.key",                   dest: "{{ dirs.etcd_pki }}/{{ certificates.servers.etcd_peer.name }}.key",                         mode: "0600" }
+
+pki_distribute_workers:
+  - { src: "{{ certificates.clients.kube_proxy_client.name }}.crt",           dest: "{{ dirs.kubernetes_pki }}/{{ certificates.clients.kube_proxy_client.name }}.crt",           mode: "0644" }
+  - { src: "{{ certificates.clients.kube_proxy_client.name }}.key",           dest: "{{ dirs.kubernetes_pki }}/{{ certificates.clients.kube_proxy_client.name }}.key",           mode: "0600" }
+
+kubeconfigs:
+  kube_controller_manager:
+    kubeconfig:   "kube-controller-manager.kubeconfig"
+    dest:         "{{ dirs.kubernetes }}/kube-controller-manager.kubeconfig"
+    hosts_group:  "masters"
+    embed_certs:  false
+    use_localhost: true
+    user:         "system:kube-controller-manager"
+    local_ca_path:      "{{ pki_local_dir }}/{{ ca.kubernetes.name }}.crt"
+    local_cert_path:    "{{ pki_local_dir }}/{{ certificates.clients.controller_manager_client.name }}.crt"
+    local_key_path:     "{{ pki_local_dir }}/{{ certificates.clients.controller_manager_client.name }}.key"
+    remote_ca_path:      "{{ dirs.kubernetes_pki }}/{{ ca.kubernetes.name }}.crt"
+    remote_cert_path:    "{{ dirs.kubernetes_pki }}/{{ certificates.clients.controller_manager_client.name }}.crt"
+    remote_key_path:     "{{ dirs.kubernetes_pki }}/{{ certificates.clients.controller_manager_client.name }}.key"
+
+  kube_scheduler:
+    kubeconfig:   "kube-scheduler.kubeconfig"
+    dest:         "{{ dirs.kubernetes }}/kube-scheduler.kubeconfig"
+    hosts_group:  "masters"
+    embed_certs:  false
+    use_localhost: true
+    user:         "system:kube-scheduler"
+    local_ca_path:      "{{ pki_local_dir }}/{{ ca.kubernetes.name }}.crt"
+    local_cert_path:    "{{ pki_local_dir }}/{{ certificates.clients.scheduler_client.name }}.crt"
+    local_key_path:     "{{ pki_local_dir }}/{{ certificates.clients.scheduler_client.name }}.key"
+    remote_ca_path:      "{{ dirs.kubernetes_pki }}/{{ ca.kubernetes.name }}.crt"
+    remote_cert_path:    "{{ dirs.kubernetes_pki }}/{{ certificates.clients.scheduler_client.name }}.crt"
+    remote_key_path:     "{{ dirs.kubernetes_pki }}/{{ certificates.clients.scheduler_client.name }}.key"
+
+  admin:
+    kubeconfig:   "admin.kubeconfig"
+    dest:         "{{ dirs.kubernetes }}/admin.kubeconfig"
+    hosts_group:  "masters"
+    embed_certs:  true
+    use_localhost: false
+    user:         "{{ certificates.clients.admin.common_name }}"
+    local_ca_path:      "{{ pki_local_dir }}/{{ ca.kubernetes.name }}.crt"
+    local_cert_path:    "{{ pki_local_dir }}/{{ certificates.clients.admin.name }}.crt"
+    local_key_path:     "{{ pki_local_dir }}/{{ certificates.clients.admin.name }}.key"
+    remote_ca_path:      "{{ dirs.kubernetes_pki }}/{{ ca.kubernetes.name }}.crt"
+    remote_cert_path:    "{{ dirs.kubernetes_pki }}/{{ certificates.clients.admin.name }}.crt"
+    remote_key_path:     "{{ dirs.kubernetes_pki }}/{{ certificates.clients.admin.name }}.key"
+
+  kube_proxy:
+    kubeconfig:   "kube-proxy.kubeconfig"
+    dest:         "{{ dirs.kubeproxy }}/kube-proxy.kubeconfig"
+    hosts_group:  "workers"
+    embed_certs:  false
+    use_localhost: false
+    user:         "system:kube-proxy"
+    local_ca_path:      "{{ pki_local_dir }}/{{ ca.kubernetes.name }}.crt"
+    local_cert_path:    "{{ pki_local_dir }}/{{ certificates.clients.kube_proxy_client.name }}.crt"
+    local_key_path:     "{{ pki_local_dir }}/{{ certificates.clients.kube_proxy_client.name }}.key"
+    remote_ca_path:      "{{ dirs.kubernetes_pki }}/{{ ca.kubernetes.name }}.crt"
+    remote_cert_path:    "{{ dirs.kubernetes_pki }}/{{ certificates.clients.kube_proxy_client.name }}.crt"
+    remote_key_path:     "{{ dirs.kubernetes_pki }}/{{ certificates.clients.kube_proxy_client.name }}.key"

@@ -1,0 +1,14 @@
+---
+galaxy_info:
+  role_name: etcd
+  description: Bootstrap and configure etcd for Kubernetes control plane
+  min_ansible_version: "2.12"
+  platforms:
+    - name: Ubuntu
+      versions:
+        - focal
+        - jammy
+    - name: Debian
+      versions:
+        - bullseye
+        - bookworm

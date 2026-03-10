@@ -1,0 +1,43 @@
+[Unit]
+Description=Kubernetes API Server
+Documentation=https://github.com/kubernetes/kubernetes
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart={{ dirs.kubernetes_bin }}/kube-apiserver \
+  --advertise-address={{ ansible_host }} \
+  --allow-privileged=true \
+  --apiserver-count={{ apiserver_count }} \
+  --audit-log-maxage={{ audit_log_maxage }} \
+  --audit-log-maxbackup={{ audit_log_maxbackup }} \
+  --audit-log-maxsize={{ audit_log_maxsize }} \
+  --audit-log-path=/var/log/audit.log \
+  --authorization-mode=Node,RBAC \
+  --bind-address=0.0.0.0 \
+  --client-ca-file={{ dirs.kubernetes_pki }}/{{ ca.kubernetes.name }}.crt \
+  --enable-admission-plugins=NodeRestriction,ServiceAccount \
+  --enable-bootstrap-token-auth=true \
+  --etcd-cafile={{ dirs.etcd_pki }}/{{ ca.etcd.name }}.crt \
+  --etcd-certfile={{ dirs.kubernetes_pki }}/{{ certificates.clients.apiserver_etcd_client.name }}.crt \
+  --etcd-keyfile={{ dirs.kubernetes_pki }}/{{ certificates.clients.apiserver_etcd_client.name }}.key \
+  --etcd-servers={% for host in groups[masters_group] %}https://{{ hostvars[host].ansible_host }}:2379{% if not loop.last %},{% endif %}{% endfor %} \
+  --event-ttl=1h \
+  --encryption-provider-config={{ dirs.kubernetes }}/encryption-config.yaml \
+  --kubelet-certificate-authority={{ dirs.kubernetes_pki }}/{{ ca.kubernetes.name }}.crt \
+  --kubelet-client-certificate={{ dirs.kubernetes_pki }}/{{ certificates.clients.apiserver_kubelet_client.name }}.crt \
+  --kubelet-client-key={{ dirs.kubernetes_pki }}/{{ certificates.clients.apiserver_kubelet_client.name }}.key \
+  --runtime-config=api/all=true \
+  --service-account-key-file={{ dirs.kubernetes_pki }}/{{ certificates.clients.service_account.name }}.crt \
+  --service-account-signing-key-file={{ dirs.kubernetes_pki }}/{{ certificates.clients.service_account.name }}.key \
+  --service-account-issuer=https://{{ hostvars[groups[loadbalancer_group][0]].ansible_host }}:6443 \
+  --service-cluster-ip-range={{ service_cidr }} \
+  --service-node-port-range={{ service_node_port_range }} \
+  --tls-cert-file={{ dirs.kubernetes_pki }}/{{ certificates.servers.kube_apiserver.name }}.crt \
+  --tls-private-key-file={{ dirs.kubernetes_pki }}/{{ certificates.servers.kube_apiserver.name }}.key \
+  --v=2
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

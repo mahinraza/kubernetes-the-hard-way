@@ -1,0 +1,28 @@
+# tasks/main.yml
+- name: Create etcd data directory
+  ansible.builtin.file:
+    path: "{{ dirs.etcd_data }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Deploy etcd systemd unit file
+  ansible.builtin.template:
+    src: etcd.service.j2
+    dest: /etc/systemd/system/etcd.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart etcd
+
+- name: Enable etcd service
+  ansible.builtin.systemd:
+    name: etcd
+    enabled: true
+    daemon_reload: true
+
+- name: Ensure etcd is started
+  ansible.builtin.systemd:
+    name: etcd
+    state: started

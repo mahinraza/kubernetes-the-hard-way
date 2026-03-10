@@ -1,0 +1,11 @@
+---
+- name: Ensure kubeconfig output directory exists
+  ansible.builtin.file:
+    path: "{{ kubeconfig_local_dir }}"
+    state: directory
+    mode: "0755"
+    owner: "{{ lookup('env', 'USER') }}"
+    group: "{{ lookup('env', 'USER') }}"
+  delegate_to: localhost
+  become: false
+  run_once: true

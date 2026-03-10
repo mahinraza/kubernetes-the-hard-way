@@ -1,0 +1,16 @@
+[Unit]
+Description=Kubernetes Scheduler
+Documentation=https://github.com/kubernetes/kubernetes
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart={{ dirs.kubernetes_bin }}/kube-scheduler \
+  --kubeconfig={{ dirs.kubernetes }}/{{ kubeconfigs.kube_scheduler.kubeconfig }} \
+  --leader-elect=true \
+  --v=2
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

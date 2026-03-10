@@ -1,0 +1,12 @@
+---
+- name: Install HAProxy
+  ansible.builtin.import_tasks: install.yml
+  become: true
+
+- name: Configure HAProxy
+  ansible.builtin.import_tasks: configure.yml
+  become: true
+
+- name: Configure firewall
+  ansible.builtin.import_tasks: firewall.yml
+  become: true

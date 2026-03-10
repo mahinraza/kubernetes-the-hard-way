@@ -1,0 +1,30 @@
+---
+- name: Ensure common directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop: "{{ dirs_all }}"
+  when: inventory_hostname in groups['masters'] + groups['workers']
+
+- name: Ensure master directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop: "{{ dirs_masters }}"
+  when: inventory_hostname in groups['masters']
+
+- name: Ensure worker directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+  loop: "{{ dirs_workers }}"
+  when: inventory_hostname in groups['workers']

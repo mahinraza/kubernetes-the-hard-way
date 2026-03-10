@@ -1,0 +1,35 @@
+---
+- name: Detect architecture
+  ansible.builtin.set_fact:
+    k8s_arch: "{{ 'amd64' if ansible_architecture == 'x86_64' else 'arm64' }}"
+
+- name: Get latest stable Kubernetes version
+  ansible.builtin.uri:
+    url: https://dl.k8s.io/release/stable.txt
+    return_content: true
+  register: k8s_stable_version
+  run_once: true
+  delegate_to: localhost
+
+- name: Set Kubernetes version fact
+  ansible.builtin.set_fact:
+    k8s_version: "{{ k8s_version | default(k8s_stable_version.content | trim) }}"
+
+- name: Check installed versions of worker binaries
+  ansible.builtin.command: "{{ item }} --version"
+  register: binary_versions
+  changed_when: false
+  failed_when: false
+  loop:
+    - kubelet
+    - kube-proxy
+
+- name: Download worker binaries
+  ansible.builtin.get_url:
+    url: "https://dl.k8s.io/release/{{ k8s_version }}/bin/linux/{{ k8s_arch }}/{{ item.item }}"
+    dest: "{{ dirs.kubernetes_bin }}/{{ item.item }}"
+    mode: "0755"
+    owner: root
+    group: root
+  loop: "{{ binary_versions.results }}"
+  when: k8s_version not in (item.stdout | default(''))

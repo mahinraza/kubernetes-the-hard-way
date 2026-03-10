@@ -1,0 +1,59 @@
+---
+- name: "Kubernetes The Hard Way with Ansible"
+  hosts: localhost
+  gather_facts: no
+  tasks:
+    - name: "Start installation"
+      ansible.builtin.debug:
+        msg: "Beginning Kubernetes The Hard Way installation"
+
+# - import_playbook: 00-prerequisites.yml
+#   tags:
+#   - prerequisites
+
+- import_playbook: 01-ca-tls.yml
+  tags:
+  - pki
+
+- import_playbook: 02-ca-tls-distribute.yml
+  tags:
+  - pki_distribution
+
+
+- import_playbook: 03-kubeconfig.yml
+  tags: 
+  - kubeconfig
+
+- import_playbook: 04-etcd.yml
+  tags:
+  - etcd
+
+- import_playbook: 05-loadbalancer.yml
+  tags:
+  - loadbalancer
+
+- import_playbook: 06-control-plane.yml
+  tags:
+  - control-plane
+  - masters
+
+- import_playbook: 07-data-plane.yml
+  tags:
+  - data-plane
+  - workers
+
+- import_playbook: 08-cni.yml
+  tags:
+  - cni
+  
+# - import_playbook: 05-networking.yml
+#   tags:
+#   - networking
+
+# - import_playbook: 06-kubectl.yml
+#   tags:
+#   - kubectl
+
+# - import_playbook: 07-verify.yml
+#   tags:
+#   - verify

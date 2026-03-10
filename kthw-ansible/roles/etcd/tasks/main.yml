@@ -1,0 +1,7 @@
+---
+- name: Install etcd
+  ansible.builtin.import_tasks: install.yml
+
+- name: Deploy etcd systemd service
+  ansible.builtin.import_tasks: service.yml
+  become: true

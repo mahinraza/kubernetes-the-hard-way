@@ -1,0 +1,63 @@
+---
+- name: Determine latest Kubernetes minor version for apt repo
+  ansible.builtin.uri:
+    url: https://dl.k8s.io/release/stable.txt
+    return_content: true
+  register: k8s_stable_full
+  run_once: true
+  delegate_to: localhost
+
+- name: Set Kubernetes apt repo version fact
+  ansible.builtin.set_fact:
+    k8s_apt_version: >-
+      {{ k8s_stable_full.content | trim | regex_replace('^(v\d+\.\d+).*', '\1') }}
+
+- name: Create apt keyrings directory
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Download Kubernetes apt signing key
+  ansible.builtin.shell:
+    cmd: >
+      curl -fsSL
+      https://pkgs.k8s.io/core:/stable:/{{ k8s_apt_version }}/deb/Release.key
+      | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+- name: Add Kubernetes apt repository
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/kubernetes.list
+    content: |
+      deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/{{ k8s_apt_version }}/deb/ /
+    mode: "0644"
+
+- name: Install containerd and CNI components
+  ansible.builtin.apt:
+    name:
+      - containerd
+      - kubernetes-cni
+      - kubectl
+      - ipvsadm
+      - ipset
+    state: present
+    update_cache: true
+
+- name: Create containerd config directory
+  ansible.builtin.file:
+    path: /etc/containerd
+    state: directory
+    mode: "0755"
+
+- name: Generate containerd default config with SystemdCgroup enabled
+  ansible.builtin.shell:
+    cmd: containerd config default | sed 's/SystemdCgroup = false/SystemdCgroup = true/' > /etc/containerd/config.toml
+    creates: /etc/containerd/config.toml
+  notify: Restart containerd
+
+- name: Enable and start containerd
+  ansible.builtin.systemd:
+    name: containerd
+    enabled: true
+    state: started

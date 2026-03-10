@@ -1,0 +1,5 @@
+---
+- name: Bootstrap etcd cluster
+  hosts: loadbalancer
+  roles:
+    - role: loadbalancer

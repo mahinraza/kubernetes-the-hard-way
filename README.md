@@ -113,3 +113,15 @@ node02  (1GB RAM, 1 CPU)
 - Original tutorial by [Kelsey Hightower](https://github.com/kelseyhightower/kubernetes-the-hard-way)
 - Local VM adaptation by [mmumshad](https://github.com/mmumshad/kubernetes-the-hard-way)
 - This fork maintained by **Mahin Raza** for personal learning
+
+
+```bash
+ansible-playbook playbooks/site.yml --tags pki
+ansible-playbook playbooks/site.yml --tags pki_distribution
+ansible-playbook playbooks/site.yml --tags kubeconfig
+ansible-playbook playbooks/site.yml --tags etcd
+ansible-playbook playbooks/site.yml --tags loadbalancer
+# ansible-playbook playbooks/site.yml --tags control-plane
+ansible-playbook playbooks/site.yml --tags masters
+ansible-playbook playbooks/site.yml --tags workers
+```

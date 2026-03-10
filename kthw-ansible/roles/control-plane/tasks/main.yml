@@ -1,0 +1,15 @@
+---
+- name: Generate encryption config
+  ansible.builtin.import_tasks: encryption.yml
+
+- name: Install control plane binaries
+  ansible.builtin.import_tasks: install.yml
+
+# - name: Place certificates and kubeconfigs
+#   ansible.builtin.import_tasks: pki.yml
+
+- name: Deploy systemd unit files
+  ansible.builtin.import_tasks: service.yml
+
+- name: Start control plane services
+  ansible.builtin.import_tasks: start.yml

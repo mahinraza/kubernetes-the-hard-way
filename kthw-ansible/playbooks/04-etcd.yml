@@ -1,0 +1,6 @@
+---
+- name: Bootstrap etcd cluster
+  hosts: masters
+  become: true
+  roles:
+    - role: etcd

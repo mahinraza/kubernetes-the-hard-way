@@ -1,0 +1,8 @@
+---
+- name: Bootstrapping a control-plane node...
+  hosts: all
+  become: true
+  roles:
+    - pki_distribute
+  tags:
+  - pki_distribution

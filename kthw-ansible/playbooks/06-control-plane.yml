@@ -1,0 +1,6 @@
+---
+- name: Bootstrapping a control-plane node...
+  hosts: masters
+  become: true
+  roles:
+    - control-plane

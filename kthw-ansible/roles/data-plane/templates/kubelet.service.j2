@@ -1,0 +1,17 @@
+[Unit]
+Description=Kubernetes Kubelet
+Documentation=https://github.com/kubernetes/kubernetes
+After=containerd.service
+Requires=containerd.service
+
+[Service]
+ExecStart={{ dirs.kubernetes_bin }}/kubelet \
+  --config={{ dirs.kubelet }}/kubelet-config.yaml \
+  --kubeconfig={{ dirs.kubernetes }}/kubelet.kubeconfig \
+  --node-ip={{ ansible_host }} \
+  --v=2
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,5 @@
+---
+galaxy_info:
+  role_name: pki_distribute
+  description: Distribute PKI certificates and keys to all cluster nodes
+  min_ansible_version: "2.12"

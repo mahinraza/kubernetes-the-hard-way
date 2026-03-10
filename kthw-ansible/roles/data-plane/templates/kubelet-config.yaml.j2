@@ -1,0 +1,21 @@
+kind: KubeletConfiguration
+apiVersion: kubelet.config.k8s.io/v1beta1
+authentication:
+  anonymous:
+    enabled: false
+  webhook:
+    enabled: true
+  x509:
+    clientCAFile: {{ dirs.kubernetes_pki }}/ca.crt
+authorization:
+  mode: Webhook
+containerRuntimeEndpoint: unix:///var/run/containerd/containerd.sock
+clusterDomain: {{ kubelet_cluster_domain }}
+clusterDNS:
+  - {{ cluster_dns }}
+cgroupDriver: systemd
+resolvConf: {{ kubelet_resolv_conf }}
+runtimeRequestTimeout: "{{ kubelet_runtime_request_timeout }}"
+tlsCertFile: {{  dirs.kubernetes_pki }}/{{ inventory_hostname_short }}.crt
+tlsPrivateKeyFile: {{ dirs.kubernetes_pki }}/{{ inventory_hostname_short }}.key
+registerNode: true

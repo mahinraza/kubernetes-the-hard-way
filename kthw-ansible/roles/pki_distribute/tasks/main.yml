@@ -1,0 +1,6 @@
+---
+- name: Create directories on all nodes
+  ansible.builtin.import_tasks: directories.yml
+
+- name: Distribute certificates to all nodes
+  ansible.builtin.import_tasks: distribute.yml

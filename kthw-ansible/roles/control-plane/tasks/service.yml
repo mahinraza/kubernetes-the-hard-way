@@ -1,0 +1,27 @@
+---
+- name: Deploy kube-apiserver systemd unit
+  ansible.builtin.template:
+    src: kube-apiserver.service.j2
+    dest: /etc/systemd/system/kube-apiserver.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart controlplane services
+
+- name: Deploy kube-controller-manager systemd unit
+  ansible.builtin.template:
+    src: kube-controller-manager.service.j2
+    dest: /etc/systemd/system/kube-controller-manager.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart controlplane services
+
+- name: Deploy kube-scheduler systemd unit
+  ansible.builtin.template:
+    src: kube-scheduler.service.j2
+    dest: /etc/systemd/system/kube-scheduler.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart controlplane services

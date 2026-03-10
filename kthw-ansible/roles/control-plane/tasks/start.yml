@@ -1,0 +1,42 @@
+---
+- name: Enable control plane services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    enabled: true
+    daemon_reload: true
+  loop:
+    - kube-apiserver
+    - kube-controller-manager
+    - kube-scheduler
+
+- name: Start control plane services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: started
+  loop:
+    - kube-apiserver
+    - kube-controller-manager
+    - kube-scheduler
+
+- name: Wait for kube-apiserver to be ready
+  ansible.builtin.uri:
+    url: "https://127.0.0.1:6443/healthz"
+    validate_certs: false
+    status_code: 200
+  register: apiserver_health
+  retries: 10
+  delay: 5
+  until: apiserver_health.status == 200
+
+- name: Verify component statuses
+  ansible.builtin.command: >
+    kubectl get componentstatuses
+    --kubeconfig {{ dirs.kubernetes }}/admin.kubeconfig
+  register: component_status
+  changed_when: false
+  run_once: true
+
+- name: Show component statuses
+  ansible.builtin.debug:
+    var: component_status.stdout_lines
+  run_once: true

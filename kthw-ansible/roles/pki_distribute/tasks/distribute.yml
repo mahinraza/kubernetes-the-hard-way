@@ -1,0 +1,42 @@
+---
+- name: Distribute common certs to all nodes
+  ansible.builtin.copy:
+    src:   "{{ pki_local_dir }}/{{ item.src }}"
+    dest:  "{{ item.dest }}"
+    owner: root
+    group: root
+    mode:  "{{ item.mode }}"
+  loop: "{{ pki_distribute_all }}"
+  when: inventory_hostname in groups['masters'] + groups['workers']
+
+- name: Distribute master certs
+  ansible.builtin.copy:
+    src:   "{{ pki_local_dir }}/{{ item.src }}"
+    dest:  "{{ item.dest }}"
+    owner: root
+    group: root
+    mode:  "{{ item.mode }}"
+  loop: "{{ pki_distribute_masters }}"
+  when: inventory_hostname in groups['masters']
+
+- name: Distribute worker certs
+  ansible.builtin.copy:
+    src:   "{{ pki_local_dir }}/{{ item.src }}"
+    dest:  "{{ item.dest }}"
+    owner: root
+    group: root
+    mode:  "{{ item.mode }}"
+  loop: "{{ pki_distribute_workers }}"
+  when: inventory_hostname in groups['workers']
+
+- name: Distribute per-node kubelet certs
+  ansible.builtin.copy:
+    src:   "{{ pki_local_dir }}/{{ inventory_hostname_short }}.{{ item }}"
+    dest:  "{{ dirs.kubernetes_pki }}/{{ inventory_hostname_short }}.{{ item }}"
+    owner: root
+    group: root
+    mode:  "{{ '0600' if item == 'key' else '0644' }}"
+  loop:
+    - crt
+    - key
+  when: inventory_hostname in groups['workers']

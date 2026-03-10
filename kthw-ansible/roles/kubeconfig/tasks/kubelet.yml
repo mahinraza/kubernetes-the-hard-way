@@ -1,19 +1,20 @@
 ---
-- name: Generate kubelet kubeconfig
-  template:
+# Runs on localhost once per worker — generates workerone.kubeconfig, workertwo.kubeconfig etc.
+- name: Generate kubelet kubeconfig per worker
+  ansible.builtin.template:
     src: kubeconfig.j2
-    dest: "{{ dirs.kubernetes_pki }}/{{ hostvars[worker_node].short_name }}.kubeconfig"
-    owner: root
-    group: root
-    mode: '0600'
-  become: true
+    dest: "{{ kubeconfig_local_dir }}/{{ inventory_hostname_short }}.kubeconfig"
+    mode: "0600"
   vars:
     kc:
-      embed_certs: false
+      embed_certs:   false
       use_localhost: false
-      user: "system:node:{{ hostvars[worker_node].short_name }}"
-      dest: "{{ dirs.kubernetes_pki }}/{{ hostvars[worker_node].short_name }}.kubeconfig"
-      ca_path: "{{ dirs.kubernetes_pki }}/{{ ca.kubernetes.name }}.crt"
-      cert_path: "{{ dirs.kubernetes_pki }}/{{ hostvars[worker_node].short_name }}.crt"
-      key_path: "{{ dirs.kubernetes_pki }}/{{ hostvars[worker_node].short_name }}.key"
-  delegate_to: "{{ worker_node }}"
+      user:          "system:node:{{ inventory_hostname_short }}"
+      local_ca_path:       "{{ pki_local_dir }}/{{ ca.kubernetes.name }}.crt"
+      local_cert_path:     "{{ pki_local_dir }}/{{ inventory_hostname_short }}.crt"
+      local_key_path:      "{{ pki_local_dir }}/{{ inventory_hostname_short }}.key"
+      remote_ca_path:       "{{ dirs.kubernetes_pki }}/{{ ca.kubernetes.name }}.crt"
+      remote_cert_path:     "{{ dirs.kubernetes_pki }}/{{ inventory_hostname_short }}.crt"
+      remote_key_path:      "{{ dirs.kubernetes_pki }}/{{ inventory_hostname_short }}.key"
+  delegate_to: localhost
+  when: inventory_hostname in groups['workers']

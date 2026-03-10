@@ -1,14 +1,14 @@
 ---
 - name: Generating {{ item.value.name }}.key...
   community.crypto.openssl_privatekey:
-    path: "{{ pki_dir }}/{{ item.value.name }}.key"
+    path: "{{ pki_local_dir }}/{{ item.value.name }}.key"
     size: "{{ item.value.key_size }}"
     type: "{{ item.value.key_type }}"
     mode: '0600'
 
 - name: Generate csr for {{ item.value.name }}...
   community.crypto.openssl_csr_pipe:
-    privatekey_path: "{{ pki_dir }}/{{ item.value.name }}.key"
+    privatekey_path: "{{ pki_local_dir }}/{{ item.value.name }}.key"
     common_name: "{{  item.value.common_name }}"
     organization_name: "{{ item.value.organization | default(omit) }}"
     organizational_unit_name: "{{ item.value.organizational_unit | default(omit) }}"
@@ -26,11 +26,11 @@
 
 - name: Generate a {{ item.value.name }}.crt...
   community.crypto.x509_certificate:
-    path: "{{ pki_dir }}/{{ item.value.name }}.crt"
+    path: "{{ pki_local_dir }}/{{ item.value.name }}.crt"
     csr_content: "{{ csr_result.csr }}"
     provider: ownca
-    ownca_path: "{{ pki_dir }}/{{ ca_name_mapping[item.value.ca] }}.crt"
-    ownca_privatekey_path: "{{ pki_dir }}/{{ ca_name_mapping[item.value.ca] }}.key"
+    ownca_path: "{{ pki_local_dir }}/{{ ca_name_mapping[item.value.ca] }}.crt"
+    ownca_privatekey_path: "{{ pki_local_dir }}/{{ ca_name_mapping[item.value.ca] }}.key"
     ownca_not_after: "+{{ item.value.expiry | default(default_client.expiry) }}d"
     ownca_not_before: "-1d"
     mode: '0644'

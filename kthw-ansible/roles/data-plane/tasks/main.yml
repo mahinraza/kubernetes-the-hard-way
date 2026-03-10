@@ -1,0 +1,21 @@
+---
+- name: Install container runtime prerequisites
+  ansible.builtin.import_tasks: prereqs.yml
+
+- name: Install containerd
+  ansible.builtin.import_tasks: containerd.yml
+
+- name: Install worker binaries
+  ansible.builtin.import_tasks: install.yml
+
+# - name: Place certificates and kubeconfigs
+#   ansible.builtin.import_tasks: pki.yml
+
+- name: Configure kubelet
+  ansible.builtin.import_tasks: kubelet.yml
+
+- name: Configure kube-proxy
+  ansible.builtin.import_tasks: kube_proxy.yml
+
+- name: Start worker services
+  ansible.builtin.import_tasks: start.yml

@@ -1,0 +1,32 @@
+[Unit]
+Description=Kubernetes Controller Manager
+Documentation=https://github.com/kubernetes/kubernetes
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart={{ dirs.kubernetes_bin }}/kube-controller-manager \
+  --allocate-node-cidrs=true \
+  --authentication-kubeconfig={{ dirs.kubernetes }}/{{ kubeconfigs.kube_controller_manager.kubeconfig }} \
+  --authorization-kubeconfig={{ dirs.kubernetes }}/{{ kubeconfigs.kube_controller_manager.kubeconfig }} \
+  --bind-address=127.0.0.1 \
+  --client-ca-file={{ dirs.kubernetes_pki }}/{{ ca.kubernetes.name }}.crt \
+  --cluster-cidr={{ pod_cidr }} \
+  --cluster-name={{ cluster_name }} \
+  --cluster-signing-cert-file={{ dirs.kubernetes_pki }}/{{ ca.kubernetes.name }}.crt \
+  --cluster-signing-key-file={{ dirs.kubernetes_pki }}/{{ ca.kubernetes.name }}.key \
+  --controllers=*,bootstrapsigner,tokencleaner \
+  --kubeconfig={{ dirs.kubernetes }}/{{ kubeconfigs.kube_controller_manager.kubeconfig }} \
+  --leader-elect=true \
+  --node-cidr-mask-size=24 \
+  --requestheader-client-ca-file={{ dirs.kubernetes_pki }}/{{ ca.kubernetes.name }}.crt \
+  --root-ca-file={{ dirs.kubernetes_pki }}/{{ ca.kubernetes.name }}.crt \
+  --service-account-private-key-file={{ dirs.kubernetes_pki }}/{{ certificates.clients.service_account.name }}.key \
+  --service-cluster-ip-range={{ service_cidr }} \
+  --use-service-account-credentials=true \
+  --v=2
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

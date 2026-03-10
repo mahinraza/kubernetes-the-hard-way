@@ -1,0 +1,8 @@
+---
+- name: Bootstrapping a control-plane node...
+  hosts: localhost
+  roles:
+    - pki
+  tags:
+  - pki
+

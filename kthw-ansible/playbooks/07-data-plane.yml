@@ -1,0 +1,6 @@
+---
+- name: Bootstrapping a control-plane node...
+  hosts: workers
+  become: true
+  roles:
+    - data-plane

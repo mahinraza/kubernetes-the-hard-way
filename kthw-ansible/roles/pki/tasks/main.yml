@@ -1,18 +1,44 @@
 ---
-- import_tasks: path.yml
-- include_tasks: ca.yml
+- name: Setup local PKI artifact directories
+  import_tasks: path.yml
+  tags:
+    - pki
+    - pki_local
+    - pki_generate
+
+- name: Generate CA certs
+  include_tasks: ca.yml
   loop: "{{ ca | dict2items }}"
-- include_tasks: clients.yml
+  loop_control:
+    label: "{{ item.key }}"
+  tags:
+    - pki
+    - pki_generate
+    - pki_generate_ca
+
+- name: Generate client certs
+  include_tasks: clients.yml
   loop: "{{ certificates.clients | dict2items }}"
-- include_tasks: servers.yml
+  loop_control:
+    label: "{{ item.key }}"
+  tags:
+    - pki
+    - pki_generate
+    - pki_generate_clients
+
+- name: Generate server certs
+  include_tasks: servers.yml
   loop: "{{ certificates.servers | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  tags:
+    - pki
+    - pki_generate
+    - pki_generate_servers
 
-
-# - name: Generate etcd certs centrally
-#   include_tasks: etcd.yaml
-#   loop: "{{ groups['etcd'] }}"
-#   loop_control:
-#     loop_var: etcd_node
-
-# - name: Generate apiserver etcd client cert
-#   import_tasks: kubernetes.yaml
+# - name: Distribute PKI artifacts to nodes
+#   import_tasks: distribute.yml
+#   become: true
+#   tags:
+#     - pki
+#     - pki_distribute
